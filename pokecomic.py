@@ -1,11 +1,14 @@
-# bot.py
+#!/usr/bin/python3
 import os
+import pymongo
+import sys
 
 import discord
 import random
 from dotenv import load_dotenv
 from datetime import datetime
 from glob import glob
+from update import comicdata, NUM_DIGITS
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -24,7 +27,7 @@ async def on_ready():
         f'{guild.name}(id: {guild.id})'
     )
 
-    # members = '\n - '.join([member.name for member in guild.members])
+    # members = '\n - '.join([f"{member.name} {member.id}" for member in guild.members])
     # print(f'Guild Members:\n - {members}')
 
 # This is the real meat of the bot
@@ -33,7 +36,16 @@ async def on_message(message):
     if message.author == client.user:
         return
     
-    pingers = [414630128602054658, 624152786392842281]
+    pingers = {
+        "Colin": 414630128602054658, 
+        "Claudine": 624152786392842281,
+        "William": 222084166232047616, 
+        "Jessica": 690682574686650459,
+        "Oliver": 753691662076608512,
+        "Cynthia": 690682526997676102,
+        "Brianna": 690683382681829418
+    }
+    
     channels = ["comics"]
 
     if message.author.id in pingers and message.channel.name in channels:
@@ -49,5 +61,18 @@ async def on_message(message):
                 else:
                     await message.channel.send(
                         "A comic with that number does not exist. Sorry!")
+            
+            elif "latest" in content:
+                latest = comicdata.find_one({"latest": {"$exists": True}})
+                comic = glob(f"Comics/{str(latest).zfill(NUM_DIGITS)}*")[0]
+                await message.channel.send(file=discord.File(comic))
+            
+            elif "rand" in content:
+                comic = random.sample(glob("Comics/*"), 1)[0]
+                await message.channel.send(file=discord.File(comic))
+            
+            else:
+                await message.channel.send(
+                    "Unknown command. Please try again.")
 
 client.run(TOKEN)
