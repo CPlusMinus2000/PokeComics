@@ -5,9 +5,9 @@ import discord
 import random
 from discord.ext import commands
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, time
 from glob import glob
-from update import comicdata, NUM_DIGITS
+from update import comicdata, NUM_DIGITS as ND
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -18,14 +18,17 @@ intents = discord.Intents.all()
 # client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='$p', intents=intents)
 
+# Boolean for particular questions
+listen = False
+
 chelp = """
 Sends a comic. There are some different options available:
- - `$pcomic NNN` sends the comic with number NNN (i.e. 003, 420, etc.)
- - `$pcomic NNNt` is similar, but it sends a .tif rather than a .png.
+ - `$pcomic NNN` sends the comic with number NNN (i.e. 003, 420, etc.).
+ - `$pcomic NNNt` is similar, but sends a .tif rather than a .png.
  - `$pcomic latest` sends the latest comic that YOU have permission to view.
 """
 
-pingers = { # This is a dictionary of people in the server
+people = { # This is a dictionary of people in the server
     414630128602054658: "Colin",
     624152786392842281: "Claudine",
     222084166232047616: "William",
@@ -46,6 +49,28 @@ channels = [ # Channels that comics can be distributed in
     "comics", "botspam"
 ]
 
+# List of authorized people
+authorized = ["Colin"]
+
+# Start and ending times (so morning comics can only be seen from 6:00-7:30)
+#  but converted to E[SD]T because that's where I'm hosting the bot from
+stime = time(8, 0, 0)
+etime = time(10, 35, 10, 10)
+
+def db_update(comic_num: int) -> None:
+    """
+    Updates the database, specifically any entry related to comic_num.
+    """
+
+    # Replace the comic
+    curr = comicdata.find_one({"nr": comic_num})
+    curr["viewed"] = True
+    comicdata.replace_one({"nr": comic_num}, curr)
+
+    # Update the latest viewed
+    comicdata.replace_one(
+        {"lviewed": {"$exists": True}}, {"lviewed": comic_num})
+
 # This is really just a tutorial function (just produces output)
 @bot.event
 async def on_ready():
@@ -58,17 +83,79 @@ async def on_ready():
     # members = '\n - '.join([f"{member.name} {member.id}" for member in guild.members])
     # print(f'Guild Members:\n - {members}')
 
+
+@bot.event
+async def on_message(message):
+    global listen
+    if message.author == bot.user:
+        return
+    
+    if (listen and people[message.author] in authorized and 
+            'y' in message.content.lower()):
+        
+        lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
+        comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
+        name = os.path.splitext(comic)[0] + ".png"
+        if not os.path.exists(name):
+            os.system(f'convert "{comic}" "{name}" > /dev/null')
+        
+        await message.channel.send(file=discord.File(name))
+    
+    elif (listen and people[message.author] in authorized and 
+            'n' in message.content.lower()):
+        
+        await message.channel.send("Understood.")
+    
+    listen = False
+    await bot.process_commands(message)
+
 # This is the real meat of the bot
 @bot.command(name="comic", help=chelp)
 async def comic(ctx, content: str):
+    global listen
     if ctx.message.channel.name in channels:
         # await message.channel.send("Hi!")
         content = content.strip()
 
         # Check the comic number requested
-        if content[:3].isdigit() and len(content[:3]) >= 3:
-            comics = glob(f"Comics/{content[:3]}*")
-            if len(comics) >= 1 and content.endswith('t'):
+        if content[:ND].isdigit() and len(content[:ND]) >= ND:
+
+            # Get some relevant information, like the filename and
+            #  lv, which tells us whether or not the comic is allowed
+            #  to be released at this moment
+            lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
+            comics = glob(f"Comics/{content[:ND]}*")
+            cnum = int(content[:ND])
+            
+            if len(comics) >= 1 and cnum > lv + 1:
+                await ctx.send(
+                    "You don't have permission to access that comic.")
+            
+            elif len(comics) >= 1 and cnum == lv + 1:
+                if people[ctx.message.author.id] in authorized:
+                    listen = True
+                    await ctx.send(
+                        "Are you sure you want to release a new comic? (y/n)"
+                    )
+                
+                elif people[ctx.message.author.id] == "Claudine":
+                    if stime <= datetime.now().time() <= etime:
+                        name = os.path.splitext(comics[0])[0] + ".png"
+                        if not os.path.exists(name):
+                            os.system(
+                                f'convert "{comics[0]}" "{name}" > /dev/null')
+                
+                        db_update(cnum)
+                        await ctx.send(file=discord.File(name))
+                    
+                    else:
+                        await ctx.send(
+                            "Sorry Clau. It's not the right time right now.")
+                
+                else:
+                    await ctx.send("You don't have permission to read this.")
+            
+            elif len(comics) >= 1 and content.endswith('t'):
                 await ctx.send(file=discord.File(comics[0]))
 
             elif len(comics) >= 1:
@@ -80,19 +167,42 @@ async def comic(ctx, content: str):
 
             else:
                 await ctx.send(
-                    "A comic with that number does not exist. Sorry!")
+                    "A comic with that number is not available. Sorry!")
         
+        # Command for fetching the latest comic
         elif "latest" in content:
+            lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
             lat = comicdata.find_one({"latest": {"$exists": True}})["latest"]
-            comic = glob(f"Comics/{str(lat).zfill(NUM_DIGITS)}*")[0]
-            name = os.path.splitext(comic)[0] + ".png"
-            if not os.path.exists(name):
-                os.system(f'convert "{comic}" "{name}" > /dev/null')
+
+            if (people[ctx.message.author.id] == "Claudine" and
+                stime <= datetime.now().time() <= etime):
+                    
+                    comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
+                    name = os.path.splitext(comic)[0] + ".png"
+                    if not os.path.exists(name):
+                        os.system(f'convert "{comic}" "{name}" > /dev/null')
             
-            await ctx.send(file=discord.File(name))
+                    db_update(lv + 1)
+                    await ctx.send(file=discord.File(name))
+            
+            else:
+                comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
+                name = os.path.splitext(comic)[0] + ".png"
+                if not os.path.exists(name):
+                    os.system(f'convert "{comic}" "{name}" > /dev/null')
+                
+                await ctx.send(file=discord.File(name))
+
+                if lat > lv:
+                    await ctx.send(
+                        ("A comic with a higher number has been drawn, "
+                        "but it has not been made available yet.")
+                    )
         
         elif "rand" in content:
-            comic = random.sample(glob("Comics/*"), 1)[0]
+            lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
+            number = random.randint(1, lv)
+            comic = glob(f"Comics/{str(number).zfill(ND)}*")[0]
             name = os.path.splitext(comic)[0] + ".png"
             if not os.path.exists(name):
                 os.system(f'convert "{comic}" "{name}" > /dev/null')
