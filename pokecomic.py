@@ -132,13 +132,13 @@ async def comic(ctx, content: str):
                     "You don't have permission to access that comic.")
             
             elif len(comics) >= 1 and cnum == lv + 1:
-                if people[ctx.message.author.id] in authorized:
+                if people[ctx.author.id] in authorized:
                     listen = True
                     await ctx.send(
                         "Are you sure you want to release a new comic? (y/n)"
                     )
                 
-                elif people[ctx.message.author.id] == "Claudine":
+                elif people[ctx.author.id] == "Claudine":
                     if stime <= datetime.now().time() <= etime:
                         name = os.path.splitext(comics[0])[0] + ".png"
                         if not os.path.exists(name):
@@ -150,7 +150,7 @@ async def comic(ctx, content: str):
                     
                     else:
                         await ctx.send(
-                            "Sorry Clau. It's not the right time right now.")
+                            "Sorry Clau. Now's not the right time.")
                 
                 else:
                     await ctx.send("You don't have permission to read this.")
@@ -174,7 +174,7 @@ async def comic(ctx, content: str):
             lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
             lat = comicdata.find_one({"latest": {"$exists": True}})["latest"]
 
-            if (people[ctx.message.author.id] == "Claudine" and
+            if (people[ctx.author.id] == "Claudine" and
                 stime <= datetime.now().time() <= etime):
                     
                     comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
@@ -193,10 +193,17 @@ async def comic(ctx, content: str):
                 
                 await ctx.send(file=discord.File(name))
 
-                if lat > lv:
+                if lat > lv and people[ctx.author.id] == "Claudine":
                     await ctx.send(
-                        ("A comic with a higher number has been drawn, "
-                        "but it has not been made available yet.")
+                        ("Hi Clau! Colin already drew the next comic, "
+                        "but you don't get to see it yet. Sorry!")
+                    )
+
+                elif lat > lv:
+                    await ctx.send(
+                        ("Colin has drawn a newer comic, "
+                        "but it's not available yet. "
+                        "Go bug Claudine if you want to read it.")
                     )
         
         elif "rand" in content:
