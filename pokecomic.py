@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 import os
-import pymongo
-import sys
 
 import discord
 import random
@@ -41,7 +39,7 @@ async def on_message(message):
         "Claudine": 624152786392842281,
         "William": 222084166232047616, 
         "Jessica": 690682574686650459,
-        "Oliver": 753691662076608512,
+        "Oliver": 453350283242897430,
         "Cynthia": 690682526997676102,
         "Brianna": 690683382681829418
     }
