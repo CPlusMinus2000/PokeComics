@@ -39,7 +39,8 @@ for comic in glob("Comics/*"):
             "nr": number,
             "name": name,
             "extension": extension,
-            "published": datetime.today().isoformat()
+            "published": datetime.today().isoformat(),
+            "viewed": False
         })
 
 # Add the numeric value of the latest comic

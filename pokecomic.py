@@ -18,6 +18,34 @@ intents = discord.Intents.all()
 # client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='$p', intents=intents)
 
+chelp = """
+Sends a comic. There are some different options available:
+ - `$pcomic NNN` sends the comic with number NNN (i.e. 003, 420, etc.)
+ - `$pcomic NNNt` is similar, but it sends a .tif rather than a .png.
+ - `$pcomic latest` sends the latest comic that YOU have permission to view.
+"""
+
+pingers = { # This is a dictionary of people in the server
+    414630128602054658: "Colin",
+    624152786392842281: "Claudine",
+    222084166232047616: "William",
+    690682574686650459: "Jessica",
+    453350283242897430: "Oliver",
+    753691662076608512: "Oliver",
+    690682526997676102: "Cynthia",
+    690683382681829418: "Brianna",
+    275699575556407297: "Nick",
+    285333440948338699: "Daniel",
+    260128919380819970: "Terry",
+    690727551567528048: "Jenny",
+    740377202406981633: "Vicki",
+    224999022568407041: "Dayou"
+}
+
+channels = [ # Channels that comics can be distributed in
+    "comics", "botspam"
+]
+
 # This is really just a tutorial function (just produces output)
 @bot.event
 async def on_ready():
@@ -27,27 +55,12 @@ async def on_ready():
         f'{guild.name}(id: {guild.id})'
     )
 
-    members = '\n - '.join([f"{member.name} {member.id}" for member in guild.members])
-    print(f'Guild Members:\n - {members}')
+    # members = '\n - '.join([f"{member.name} {member.id}" for member in guild.members])
+    # print(f'Guild Members:\n - {members}')
 
 # This is the real meat of the bot
-@bot.command(name="comic", help="Sends a comic.")
+@bot.command(name="comic", help=chelp)
 async def comic(ctx, content: str):
-    
-    pingers = {
-        414630128602054658: "Colin",
-        624152786392842281: "Claudine",
-        222084166232047616: "William",
-        690682574686650459: "Jessica",
-        453350283242897430: "Oliver",
-        690682526997676102: "Cynthia",
-        690683382681829418: "Brianna",
-        275699575556407297: "Nick",
-        285333440948338699: "Daniel"
-    }
-    
-    channels = ["comics"]
-
     if ctx.message.channel.name in channels:
         # await message.channel.send("Hi!")
         content = content.strip()
@@ -70,16 +83,13 @@ async def comic(ctx, content: str):
                     "A comic with that number does not exist. Sorry!")
         
         elif "latest" in content:
-            latest = comicdata.find_one({"latest": {"$exists": True}})["latest"]
-            try:
-                comic = glob(f"Comics/{str(latest).zfill(NUM_DIGITS)}*")[0]
-                name = os.path.splitext(comic)[0] + ".png"
-                if not os.path.exists(name):
-                    os.system(f'convert "{comic}" "{name}" > /dev/null')
-                
-                await ctx.send(file=discord.File(name))
-            except:
-                print(latest)
+            lat = comicdata.find_one({"latest": {"$exists": True}})["latest"]
+            comic = glob(f"Comics/{str(lat).zfill(NUM_DIGITS)}*")[0]
+            name = os.path.splitext(comic)[0] + ".png"
+            if not os.path.exists(name):
+                os.system(f'convert "{comic}" "{name}" > /dev/null')
+            
+            await ctx.send(file=discord.File(name))
         
         elif "rand" in content:
             comic = random.sample(glob("Comics/*"), 1)[0]
@@ -91,5 +101,16 @@ async def comic(ctx, content: str):
         
         else:
             await ctx.send("Unknown command. Please try again.")
+
+@bot.command(name="status", help="Gets the current status of comics.")
+async def status(ctx):
+    if ctx.message.channel.name in channels:
+        latest = comicdata.find_one({"latest": {"$exists": True}})["latest"]
+        lview = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
+
+        await ctx.send((
+            f"{lview} comics have been viewed so far, "
+            f"and #{latest} is the latest drawn."
+        ))
 
 bot.run(TOKEN)
