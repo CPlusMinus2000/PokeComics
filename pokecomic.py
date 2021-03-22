@@ -146,6 +146,7 @@ async def comic(ctx, content: str):
                                 f'convert "{comics[0]}" "{name}" > /dev/null')
                 
                         db_update(cnum)
+                        await ctx.send("You woke up! Here's the next comic ^_^")
                         await ctx.send(file=discord.File(name))
                     
                     else:
@@ -183,6 +184,7 @@ async def comic(ctx, content: str):
                         os.system(f'convert "{comic}" "{name}" > /dev/null')
             
                     db_update(lv + 1)
+                    await ctx.send("You woke up! Here's the next comic ^_^")
                     await ctx.send(file=discord.File(name))
             
             else:
