@@ -4,16 +4,18 @@ import pymongo
 import os
 
 from glob import glob
+from dotenv import load_dotenv
 from datetime import datetime
 
 NUM_DIGITS = 3
 
+load_dotenv()
 # Database variables
-dbuser = "hcolin88"
-dbpass = "Zb1IVRQc6lt9vvqj"
-dbhost = "cluster0.fbzdw.mongodb.net"
-dbname = "myFirstDatabase"
-dbopts = "retryWrites=true&w=majority"
+dbuser = os.getenv("DBUSER")
+dbpass = os.getenv("DBPASS")
+dbhost = os.getenv("DBHOST")
+dbname = os.getenv("DBNAME")
+dbopts = os.getenv("DBOPTS")
 
 entry = f"mongodb+srv://{dbuser}:{dbpass}@{dbhost}/{dbname}?{dbopts}"
 client = pymongo.MongoClient(entry)
