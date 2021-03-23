@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from datetime import datetime, time
 from glob import glob
 from update import comicdata, NUM_DIGITS as ND
+from pathlib import Path
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -52,6 +53,9 @@ channels = [ # Channels that comics can be distributed in
 # List of authorized people
 authorized = ["Colin"]
 
+# List of readers
+readers = ["Claudine"]
+
 # Start and ending times (so morning comics can only be seen from 6:00-7:30)
 #  but converted to E[SD]T because that's where I'm hosting the bot from
 stime = time(8, 0, 0)
@@ -70,6 +74,25 @@ def db_update(comic_num: int) -> None:
     # Update the latest viewed
     comicdata.replace_one(
         {"lviewed": {"$exists": True}}, {"lviewed": comic_num})
+
+
+async def send_comic(ctx: discord.ext.commands.Context, comic: str):
+    """
+    Sends a comic, and also checks for possible necessary preparations.
+    """
+
+    name = f"{str(Path.home())}/public_html/{os.path.splitext(comic)[0]}.png"
+    if not os.path.exists(name):
+        os.system(f'convert "{comic}" "{name}" > /dev/null')
+        os.system(f"chmod a+rx '{name}'")
+
+    #TODO: Replace 4 with an actual not-hardcoded index
+    fname = '/'.join(name.split('/')[4:]).replace(' ', "%20")
+    embed = discord.Embed()
+    embed.description = f"https://student.cs.uwaterloo.ca/~cqhe/{fname}"
+    # await ctx.send(embed=embed)
+    await ctx.send(f"https://student.cs.uwaterloo.ca/~cqhe/{fname}")
+
 
 # This is really just a tutorial function (just produces output)
 @bot.event
@@ -138,7 +161,7 @@ async def comic(ctx, content: str):
                         "Are you sure you want to release a new comic? (y/n)"
                     )
                 
-                elif people[ctx.author.id] == "Claudine":
+                elif people[ctx.author.id] in readers:
                     if stime <= datetime.now().time() <= etime:
                         name = os.path.splitext(comics[0])[0] + ".png"
                         if not os.path.exists(name):
@@ -175,7 +198,7 @@ async def comic(ctx, content: str):
             lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
             lat = comicdata.find_one({"latest": {"$exists": True}})["latest"]
 
-            if (people[ctx.author.id] == "Claudine" and
+            if (people[ctx.author.id] in readers and
                 stime <= datetime.now().time() <= etime):
                     
                     comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
@@ -189,13 +212,9 @@ async def comic(ctx, content: str):
             
             else:
                 comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
-                name = os.path.splitext(comic)[0] + ".png"
-                if not os.path.exists(name):
-                    os.system(f'convert "{comic}" "{name}" > /dev/null')
-                
-                await ctx.send(file=discord.File(name))
+                await send_comic(ctx, comic)
 
-                if lat > lv and people[ctx.author.id] == "Claudine":
+                if lat > lv and people[ctx.author.id] in readers:
                     await ctx.send(
                         ("Hi Clau! Colin already drew the next comic, "
                         "but you don't get to see it yet. Sorry!")
@@ -212,15 +231,11 @@ async def comic(ctx, content: str):
             lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
             number = random.randint(1, lv)
             comic = glob(f"Comics/{str(number).zfill(ND)}*")[0]
-            name = os.path.splitext(comic)[0] + ".png"
-            if not os.path.exists(name):
-                os.system(f'convert "{comic}" "{name}" > /dev/null')
-
-            await ctx.send(file=discord.File(name))
+            await send_comic(ctx, comic)
         
         else:
             await ctx.send(
-                "I don't recognize that command -- can you use $phelp?")
+                "I don't recognize that command -- can you try $phelp?")
 
 
 @bot.command(name="latest", help="Gets the latest comic.")
@@ -249,18 +264,18 @@ async def latest(ctx):
             
             await ctx.send(file=discord.File(name))
 
-            if lat > lv and people[ctx.author.id] == "Claudine":
+            if lat > lv and people[ctx.author.id] in readers:
                 await ctx.send(
                     ("Hi Clau! Colin already drew the next comic, "
                     "but you don't get to see it yet. Sorry!")
                 )
 
             elif lat > lv:
-                await ctx.send(
-                    ("Colin has drawn a newer comic, "
+                await ctx.send((
+                    "Colin has drawn a newer comic, "
                     "but it's not available yet. "
-                    "Go bug Claudine if you want to read it.")
-                )
+                    "Go bug Claudine if you want to read it."
+                ))
 
 @bot.command(name="status", help="Gets the current status of comics.")
 async def status(ctx):
@@ -278,7 +293,7 @@ async def status(ctx):
 async def rules(ctx):
     if ctx.message.channel.name in channels:
         await ctx.send((
-            "Hi!!! It's ya bot here. Comin' at you with a quick heads-up: "
+            "Hi!!! It's ya bot here, comin' at you with a quick heads-up: "
             "The original intent behind Colin drawing these comics "
             "is to entice Claudine to wake up early in the mornings. "
             "Because of this, Colin decided to incentivize Claudine "
