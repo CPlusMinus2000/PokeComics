@@ -88,8 +88,8 @@ async def send_comic(ctx: discord.ext.commands.Context, comic: str):
 
     #TODO: Replace 4 with an actual not-hardcoded index
     fname = '/'.join(name.split('/')[4:]).replace(' ', "%20")
-    embed = discord.Embed()
-    embed.description = f"https://student.cs.uwaterloo.ca/~cqhe/{fname}"
+    # embed = discord.Embed()
+    # embed.description = f"https://student.cs.uwaterloo.ca/~cqhe/{fname}"
     # await ctx.send(embed=embed)
     await ctx.send(f"https://student.cs.uwaterloo.ca/~cqhe/{fname}")
 
@@ -118,11 +118,7 @@ async def on_message(message):
         
         lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
         comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
-        name = os.path.splitext(comic)[0] + ".png"
-        if not os.path.exists(name):
-            os.system(f'convert "{comic}" "{name}" > /dev/null')
-        
-        await message.channel.send(file=discord.File(name))
+        await send_comic(message.channel, comic)
     
     elif (listen and people[message.author] in authorized and 
             'n' in message.content.lower()):
@@ -163,14 +159,11 @@ async def comic(ctx, content: str):
                 
                 elif people[ctx.author.id] in readers:
                     if stime <= datetime.now().time() <= etime:
-                        name = os.path.splitext(comics[0])[0] + ".png"
-                        if not os.path.exists(name):
-                            os.system(
-                                f'convert "{comics[0]}" "{name}" > /dev/null')
-                
                         db_update(cnum)
-                        await ctx.send("You woke up! Here's the next comic ^_^")
-                        await ctx.send(file=discord.File(name))
+                        await ctx.send(
+                            "You woke up! Here's the next comic ^_^")
+                        
+                        await send_comic(ctx, comics[0])
                     
                     else:
                         await ctx.send(
@@ -183,15 +176,11 @@ async def comic(ctx, content: str):
                 await ctx.send(file=discord.File(comics[0]))
 
             elif len(comics) >= 1:
-                name = os.path.splitext(comics[0])[0] + ".png"
-                if not os.path.exists(name):
-                    os.system(f'convert "{comics[0]}" "{name}" > /dev/null')
-                
-                await ctx.send(file=discord.File(name))
+                await send_comic(ctx, comics[0])
 
             else:
                 await ctx.send(
-                    "A comic with that number is not available. Sorry!")
+                    "A comic with that number is not available (yet). Sorry!")
         
         # Command for fetching the latest comic
         elif "latest" in content:
@@ -200,15 +189,11 @@ async def comic(ctx, content: str):
 
             if (people[ctx.author.id] in readers and
                 stime <= datetime.now().time() <= etime):
-                    
-                    comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
-                    name = os.path.splitext(comic)[0] + ".png"
-                    if not os.path.exists(name):
-                        os.system(f'convert "{comic}" "{name}" > /dev/null')
             
                     db_update(lv + 1)
                     await ctx.send("You woke up! Here's the next comic ^_^")
-                    await ctx.send(file=discord.File(name))
+                    comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
+                    await send_comic(ctx, comic)
             
             else:
                 comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
