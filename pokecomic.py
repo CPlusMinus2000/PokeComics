@@ -219,7 +219,48 @@ async def comic(ctx, content: str):
             await ctx.send(file=discord.File(name))
         
         else:
-            await ctx.send("Unknown command. Please try again.")
+            await ctx.send(
+                "I don't recognize that command -- can you use $phelp?")
+
+
+@bot.command(name="latest", help="Gets the latest comic.")
+async def latest(ctx):
+    if ctx.channel.name in channels:
+        lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
+        lat = comicdata.find_one({"latest": {"$exists": True}})["latest"]
+
+        if (people[ctx.author.id] == "Claudine" and
+            stime <= datetime.now().time() <= etime):
+                
+                comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
+                name = os.path.splitext(comic)[0] + ".png"
+                if not os.path.exists(name):
+                    os.system(f'convert "{comic}" "{name}" > /dev/null')
+
+                db_update(lv + 1)
+                await ctx.send("You woke up! Here's the next comic ^_^")
+                await ctx.send(file=discord.File(name))
+
+        else:
+            comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
+            name = os.path.splitext(comic)[0] + ".png"
+            if not os.path.exists(name):
+                os.system(f'convert "{comic}" "{name}" > /dev/null')
+            
+            await ctx.send(file=discord.File(name))
+
+            if lat > lv and people[ctx.author.id] == "Claudine":
+                await ctx.send(
+                    ("Hi Clau! Colin already drew the next comic, "
+                    "but you don't get to see it yet. Sorry!")
+                )
+
+            elif lat > lv:
+                await ctx.send(
+                    ("Colin has drawn a newer comic, "
+                    "but it's not available yet. "
+                    "Go bug Claudine if you want to read it.")
+                )
 
 @bot.command(name="status", help="Gets the current status of comics.")
 async def status(ctx):
@@ -231,5 +272,23 @@ async def status(ctx):
             f"{lview} comics have been viewed so far, "
             f"and #{latest} is the latest drawn."
         ))
+
+
+@bot.command(name="rules", help="States the rules of how comics work.")
+async def rules(ctx):
+    if ctx.message.channel.name in channels:
+        await ctx.send((
+            "Hi!!! It's ya bot here. Comin' at you with a quick heads-up: "
+            "The original intent behind Colin drawing these comics "
+            "is to entice Claudine to wake up early in the mornings. "
+            "Because of this, Colin decided to incentivize Claudine "
+            "by letting her see a new strip of his not-a-fanfiction "
+            "Pokémon comic when he draws them, but ONLY if she gets up "
+            "early enough in the morning (specifically 5:00-7:35 PST).\n\n"
+            "Because of this, the next comic might not be available yet, "
+            "and it'll only come out when she gets up early enough. "
+            "PokeComicsBot out!"
+        ))
+
 
 bot.run(TOKEN)
