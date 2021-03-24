@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import os
-
+import asyncio
 import discord
 import random
 from discord.ext import commands
@@ -10,9 +10,17 @@ from glob import glob
 from update import comicdata, NUM_DIGITS as ND
 from pathlib import Path
 
+# Some Discord authentication information
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD = os.getenv("DISCORD_GUILD")
+
+# Place where I store all the comics
+SITE = "https://student.cs.uwaterloo.ca/~cqhe/"
+
+# Emojis for reactions
+LEFT = '◀️'
+RIGHT = '▶️'
 
 # Apparently Discord now requires bots to have priveleged intentions
 intents = discord.Intents.all()
@@ -74,6 +82,21 @@ def db_update(comic_num: int) -> None:
     # Update the latest viewed
     comicdata.replace_one(
         {"lviewed": {"$exists": True}}, {"lviewed": comic_num})
+    
+
+def get_lviewed() -> int:
+    """
+    Gets the value of the latest viewed comic.
+    """
+
+    return comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
+
+def get_latest() -> int:
+    """
+    Gets the value of the latest drawn comic.
+    """
+
+    return comicdata.find_one({"latest": {"$exists": True}})["latest"]
 
 
 async def send_comic(ctx: discord.ext.commands.Context, comic: str):
@@ -88,10 +111,24 @@ async def send_comic(ctx: discord.ext.commands.Context, comic: str):
 
     #TODO: Replace 4 with an actual not-hardcoded index
     fname = '/'.join(name.split('/')[4:]).replace(' ', "%20")
-    # embed = discord.Embed()
-    # embed.description = f"https://student.cs.uwaterloo.ca/~cqhe/{fname}"
-    # await ctx.send(embed=embed)
-    await ctx.send(f"https://student.cs.uwaterloo.ca/~cqhe/{fname}")
+    msg = await ctx.send(f"{SITE}{fname}")
+    await msg.add_reaction(LEFT)
+    await msg.add_reaction(RIGHT)
+
+
+async def edit_comic(msg: discord.Message, comic: str):
+    """
+    Edits the message link in 'msg' with the comic.
+    """
+
+    name = f"{str(Path.home())}/public_html/{os.path.splitext(comic)[0]}.png"
+    if not os.path.exists(name):
+        os.system(f'convert "{comic}" "{name}" > /dev/null')
+        os.system(f"chmod a+rx '{name}'")
+
+    #TODO: Replace 4 with an actual not-hardcoded index
+    fname = SITE + '/'.join(name.split('/')[4:]).replace(' ', "%20")
+    await msg.edit(content=fname)
 
 
 # This is really just a tutorial function (just produces output)
@@ -103,9 +140,9 @@ async def on_ready():
         f'{guild.name}(id: {guild.id})'
     )
 
-    # members = '\n - '.join([f"{member.name} {member.id}" for member in guild.members])
+    # members = '\n'.join([f"{m.name} {m.id}" for m in guild.members])
     # print(f'Guild Members:\n - {members}')
-
+    # print(list(bot.emojis))
 
 @bot.event
 async def on_message(message):
@@ -116,8 +153,8 @@ async def on_message(message):
     if (listen and people[message.author] in authorized and 
             'y' in message.content.lower()):
         
-        lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
-        comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
+        lviewed = get_lviewed()
+        comic = glob(f"Comics/{str(lviewed).zfill(ND)}*")[0]
         await send_comic(message.channel, comic)
     
     elif (listen and people[message.author] in authorized and 
@@ -127,6 +164,41 @@ async def on_message(message):
     
     listen = False
     await bot.process_commands(message)
+
+
+@bot.event
+async def on_reaction_add(reaction, user):
+    if reaction.message.author != bot.user or user == bot.user:
+        # Ignore other people's messages, and own reactions
+        return
+    
+    cont = reaction.message.content
+    if SITE in cont and reaction.emoji in [LEFT, RIGHT]: 
+        # Comic embed message
+        comic = cont.split('/')[-1]
+        cnum = int(comic[:ND])
+        lviewed = get_lviewed()
+        latest = get_latest()
+
+        if reaction.emoji == LEFT and cnum > 1:
+            clink = glob(f"Comics/{str(cnum - 1).zfill(ND)}*")[0]
+            await edit_comic(reaction.message, clink)
+        
+        elif reaction.emoji == RIGHT and cnum < lviewed:
+            clink = glob(f"Comics/{str(cnum + 1).zfill(ND)}*")[0]
+            await edit_comic(reaction.message, clink)
+        
+        elif (reaction.emoji == RIGHT and cnum == lviewed and
+                people[user.id] in readers and lviewed < latest and
+                stime <= datetime.now().time() <= etime):
+            
+            # Wow, that is a lot of conditions to check
+            clink = glob(f"Comics/{str(cnum + 1).zfill(ND)}*")[0]
+            db_update(cnum + 1)
+            await edit_comic(reaction.message, clink)
+        
+        await reaction.remove(user)
+        await asyncio.sleep(1)
 
 # This is the real meat of the bot
 @bot.command(name="comic", help=chelp)
@@ -142,7 +214,7 @@ async def comic(ctx, content: str):
             # Get some relevant information, like the filename and
             #  lv, which tells us whether or not the comic is allowed
             #  to be released at this moment
-            lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
+            lv = get_lviewed()
             comics = glob(f"Comics/{content[:ND]}*")
             cnum = int(content[:ND])
             
@@ -184,8 +256,8 @@ async def comic(ctx, content: str):
         
         # Command for fetching the latest comic
         elif "latest" in content:
-            lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
-            lat = comicdata.find_one({"latest": {"$exists": True}})["latest"]
+            lv = get_lviewed()
+            lat = get_latest()
 
             if (people[ctx.author.id] in readers and
                 stime <= datetime.now().time() <= etime):
