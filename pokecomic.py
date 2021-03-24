@@ -259,7 +259,7 @@ async def comic(ctx, content: str):
             lv = get_metadata("lviewed")
             lat = get_metadata("latest")
 
-            if (people[ctx.author.id] in readers and
+            if (people[ctx.author.id] in readers and lv < lat and
                 stime <= datetime.now().time() <= etime):
             
                     db_update(lv + 1)
@@ -305,21 +305,13 @@ async def latest(ctx):
             stime <= datetime.now().time() <= etime):
                 
                 comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
-                name = os.path.splitext(comic)[0] + ".png"
-                if not os.path.exists(name):
-                    os.system(f'convert "{comic}" "{name}" > /dev/null')
-
                 db_update(lv + 1)
                 await ctx.send("You woke up! Here's the next comic ^_^")
-                await ctx.send(file=discord.File(name))
+                send_comic(ctx, comic)
 
         else:
             comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
-            name = os.path.splitext(comic)[0] + ".png"
-            if not os.path.exists(name):
-                os.system(f'convert "{comic}" "{name}" > /dev/null')
-            
-            await ctx.send(file=discord.File(name))
+            send_comic(ctx, comic)
 
             if lat > lv and people[ctx.author.id] in readers:
                 await ctx.send(
@@ -333,6 +325,7 @@ async def latest(ctx):
                     "but it's not available yet. "
                     "Go bug Claudine if you want to read it."
                 ))
+
 
 @bot.command(name="status", help="Gets the current status of comics.")
 async def status(ctx):
