@@ -22,6 +22,7 @@ SITE = "https://student.cs.uwaterloo.ca/~cqhe/"
 LEFT = '◀️'
 RIGHT = '▶️'
 PIPLUP_ID = 824140724224000020
+DELETE = '🗑️'
 
 # Apparently Discord now requires bots to have priveleged intentions
 intents = discord.Intents.all()
@@ -109,6 +110,7 @@ async def send_comic(ctx: discord.ext.commands.Context, comic: str):
     await msg.add_reaction(LEFT)
     await msg.add_reaction(RIGHT)
     await msg.add_reaction(bot.get_emoji(PIPLUP_ID))
+    await msg.add_reaction(DELETE)
 
 
 async def edit_comic(msg: discord.Message, comic: str):
@@ -126,7 +128,7 @@ async def edit_comic(msg: discord.Message, comic: str):
     await msg.edit(content=fname)
 
 
-# This is really just a tutorial function (just produces output)
+# Some setup printouts, plus extra info in case I need to scrape something
 @bot.event
 async def on_ready():
     guild = discord.utils.get(bot.guilds, name=GUILD)
@@ -146,16 +148,16 @@ async def on_message(message):
         return
     
     cont = message.content.lower()
-    if listen and people[message.author] in authorized and 'y' in cont:
+    if listen and people[message.author.id] in authorized and 'y' in cont:
         lviewed = get_metadata("lviewed")
         comic = glob(f"Comics/{str(lviewed).zfill(ND)}*")[0]
         await send_comic(message.channel, comic)
     
-    elif listen and people[message.author] in authorized and 'n' in cont:
+    elif listen and people[message.author.id] in authorized and 'n' in cont:
         await message.channel.send("Understood.")
     
     elif message.channel in channels and cont == "good bot":
-        await message.channel.send("Thanks! I try my best.")
+        await message.reply(content="Thanks! I try my best.")
     
     listen = False
     await bot.process_commands(message)
@@ -194,6 +196,9 @@ async def on_reaction_add(reaction, user):
         
         await reaction.remove(user)
         await asyncio.sleep(1)
+    
+    elif SITE in cont and reaction.emoji == DELETE:
+        await reaction.message.delete()
 
 # This is the real meat of the bot
 @bot.command(name="comic", help=chelp)
