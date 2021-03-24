@@ -21,6 +21,7 @@ SITE = "https://student.cs.uwaterloo.ca/~cqhe/"
 # Emojis for reactions
 LEFT = '◀️'
 RIGHT = '▶️'
+PIPLUP_ID = 824140724224000020
 
 # Apparently Discord now requires bots to have priveleged intentions
 intents = discord.Intents.all()
@@ -84,19 +85,12 @@ def db_update(comic_num: int) -> None:
         {"lviewed": {"$exists": True}}, {"lviewed": comic_num})
     
 
-def get_lviewed() -> int:
+def get_metadata(field: str) -> int:
     """
-    Gets the value of the latest viewed comic.
-    """
-
-    return comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
-
-def get_latest() -> int:
-    """
-    Gets the value of the latest drawn comic.
+    Gets the specific metadata value indicated by 'field'.
     """
 
-    return comicdata.find_one({"latest": {"$exists": True}})["latest"]
+    return comicdata.find_one({field: {"$exists": True}})[field]
 
 
 async def send_comic(ctx: discord.ext.commands.Context, comic: str):
@@ -114,6 +108,7 @@ async def send_comic(ctx: discord.ext.commands.Context, comic: str):
     msg = await ctx.send(f"{SITE}{fname}")
     await msg.add_reaction(LEFT)
     await msg.add_reaction(RIGHT)
+    await msg.add_reaction(bot.get_emoji(PIPLUP_ID))
 
 
 async def edit_comic(msg: discord.Message, comic: str):
@@ -150,17 +145,17 @@ async def on_message(message):
     if message.author == bot.user:
         return
     
-    if (listen and people[message.author] in authorized and 
-            'y' in message.content.lower()):
-        
-        lviewed = get_lviewed()
+    cont = message.content.lower()
+    if listen and people[message.author] in authorized and 'y' in cont:
+        lviewed = get_metadata("lviewed")
         comic = glob(f"Comics/{str(lviewed).zfill(ND)}*")[0]
         await send_comic(message.channel, comic)
     
-    elif (listen and people[message.author] in authorized and 
-            'n' in message.content.lower()):
-        
+    elif listen and people[message.author] in authorized and 'n' in cont:
         await message.channel.send("Understood.")
+    
+    elif message.channel in channels and cont == "good bot":
+        await message.channel.send("Thanks! I try my best.")
     
     listen = False
     await bot.process_commands(message)
@@ -177,8 +172,8 @@ async def on_reaction_add(reaction, user):
         # Comic embed message
         comic = cont.split('/')[-1]
         cnum = int(comic[:ND])
-        lviewed = get_lviewed()
-        latest = get_latest()
+        lviewed = get_metadata("lviewed")
+        latest = get_metadata("latest")
 
         if reaction.emoji == LEFT and cnum > 1:
             clink = glob(f"Comics/{str(cnum - 1).zfill(ND)}*")[0]
@@ -214,7 +209,7 @@ async def comic(ctx, content: str):
             # Get some relevant information, like the filename and
             #  lv, which tells us whether or not the comic is allowed
             #  to be released at this moment
-            lv = get_lviewed()
+            lv = get_metadata("lviewed")
             comics = glob(f"Comics/{content[:ND]}*")
             cnum = int(content[:ND])
             
@@ -256,8 +251,8 @@ async def comic(ctx, content: str):
         
         # Command for fetching the latest comic
         elif "latest" in content:
-            lv = get_lviewed()
-            lat = get_latest()
+            lv = get_metadata("lviewed")
+            lat = get_metadata("latest")
 
             if (people[ctx.author.id] in readers and
                 stime <= datetime.now().time() <= etime):
@@ -285,7 +280,7 @@ async def comic(ctx, content: str):
                     )
         
         elif "rand" in content:
-            lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
+            lv = get_metadata("lviewed")
             number = random.randint(1, lv)
             comic = glob(f"Comics/{str(number).zfill(ND)}*")[0]
             await send_comic(ctx, comic)
@@ -298,8 +293,8 @@ async def comic(ctx, content: str):
 @bot.command(name="latest", help="Gets the latest comic.")
 async def latest(ctx):
     if ctx.channel.name in channels:
-        lv = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
-        lat = comicdata.find_one({"latest": {"$exists": True}})["latest"]
+        lv = get_metadata("lviewed")
+        lat = get_metadata("latest")
 
         if (people[ctx.author.id] == "Claudine" and
             stime <= datetime.now().time() <= etime):
@@ -337,8 +332,7 @@ async def latest(ctx):
 @bot.command(name="status", help="Gets the current status of comics.")
 async def status(ctx):
     if ctx.message.channel.name in channels:
-        latest = comicdata.find_one({"latest": {"$exists": True}})["latest"]
-        lview = comicdata.find_one({"lviewed": {"$exists": True}})["lviewed"]
+        latest, lview = get_metadata("latest"), get_metadata("lviewed")
 
         await ctx.send((
             f"{lview} comics have been viewed so far, "
