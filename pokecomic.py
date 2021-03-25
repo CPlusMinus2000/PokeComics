@@ -195,7 +195,7 @@ async def on_reaction_add(reaction, user):
             await edit_comic(reaction.message, clink)
         
         await reaction.remove(user)
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5) # So the reactions can't get spammed
     
     elif SITE in cont and reaction.emoji == DELETE:
         await reaction.message.delete()
@@ -307,11 +307,11 @@ async def latest(ctx):
                 comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
                 db_update(lv + 1)
                 await ctx.send("You woke up! Here's the next comic ^_^")
-                send_comic(ctx, comic)
+                await send_comic(ctx, comic)
 
         else:
             comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
-            send_comic(ctx, comic)
+            await send_comic(ctx, comic)
 
             if lat > lv and people[ctx.author.id] in readers:
                 await ctx.send(
