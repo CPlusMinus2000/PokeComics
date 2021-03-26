@@ -1,11 +1,11 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.7
 import os
 import asyncio
 import discord
 import random
 from discord.ext import commands
 from dotenv import load_dotenv
-from datetime import datetime, time
+from datetime import datetime, date, time
 from glob import glob
 from update import comicdata, NUM_DIGITS as ND
 from pathlib import Path
@@ -82,9 +82,12 @@ def db_update(comic_num: int) -> None:
     curr["viewed"] = True
     comicdata.replace_one({"nr": comic_num}, curr)
 
-    # Update the latest viewed
-    comicdata.replace_one(
-        {"lviewed": {"$exists": True}}, {"lviewed": comic_num})
+    viewstats = comicdata.find_one({"name": "viewstats"})
+    viewstats["lviewed"] = comic_num
+    viewstats["updated"] = datetime.now().isoformat()
+
+    # Update the latest viewstats
+    comicdata.replace_one({"name": "viewdata"}, viewstats)
 
 
 def valid_comic(pathname: str, lviewed: int=0) -> int:
@@ -108,7 +111,7 @@ def get_metadata(field: str) -> int:
     Gets the specific metadata value indicated by 'field'.
     """
 
-    return comicdata.find_one({field: {"$exists": True}})[field]
+    return comicdata.find_one({"name": "viewstats"})[field]
 
 def insensitive_glob(pattern):
     """
@@ -203,6 +206,7 @@ async def on_reaction_add(reaction, user):
         cnum = int(comic[:ND])
         lviewed = get_metadata("lviewed")
         latest = get_metadata("latest")
+        update = date(*map(int, get_metadata("updated").split('/')))
 
         if reaction.emoji == LEFT and cnum > 1:
             clink = glob(f"Comics/{str(cnum - 1).zfill(ND)}*")[0]
@@ -214,7 +218,8 @@ async def on_reaction_add(reaction, user):
         
         elif (reaction.emoji == RIGHT and cnum == lviewed and
                 people[user.id] in readers and lviewed < latest and
-                stime <= datetime.now().time() <= etime):
+                stime <= datetime.now().time() <= etime and
+                date.today() != update):
             
             # Wow, that is a lot of conditions to check
             clink = glob(f"Comics/{str(cnum + 1).zfill(ND)}*")[0]
@@ -231,111 +236,67 @@ async def on_reaction_add(reaction, user):
 @bot.command(name="comic", help=chelp)
 async def comic(ctx, content: str):
     global listen
-    if ctx.message.channel.name in channels:
-        # await message.channel.send("Hi!")
-        content = content.strip()
+    if ctx.message.channel.name not in channels:
+        return
 
-        # Check the comic number requested
-        if content[:ND].isdigit() and len(content[:ND]) >= ND:
+    # await message.channel.send("Hi!")
+    content = content.strip()
+    lv = get_metadata("lviewed")
+    lat = get_metadata("latest")
+    present = datetime.now().time()
+    update = date(*map(int, get_metadata("updated").split('/')))
 
-            # Get some relevant information, like the filename and
-            #  lv, which tells us whether or not the comic is allowed
-            #  to be released at this moment
-            lv = get_metadata("lviewed")
-            comics = glob(f"Comics/{content[:ND]}*")
-            cnum = int(content[:ND])
-            
-            if len(comics) >= 1 and cnum > lv + 1:
+    # Check the comic number requested
+    if content[:ND].isdigit() and len(content[:ND]) >= ND:
+
+        # Get some relevant information
+        comics = glob(f"Comics/{content[:ND]}*")
+        cnum = int(content[:ND])
+        if len(comics) >= 1 and cnum > lv + 1:
+            await ctx.send("You don't have permission to access that comic.")
+        
+        elif len(comics) >= 1 and cnum == lv + 1:
+            if people[ctx.author.id] in authorized:
+                listen = True
                 await ctx.send(
-                    "You don't have permission to access that comic.")
+                    "Are you sure you want to release a new comic? (y/n)"
+                )
             
-            elif len(comics) >= 1 and cnum == lv + 1:
-                if people[ctx.author.id] in authorized:
-                    listen = True
+            elif people[ctx.author.id] in readers:
+                if stime <= present <= etime and update != date.today():
+                    db_update(cnum)
                     await ctx.send(
-                        "Are you sure you want to release a new comic? (y/n)"
-                    )
-                
-                elif people[ctx.author.id] in readers:
-                    if stime <= datetime.now().time() <= etime:
-                        db_update(cnum)
-                        await ctx.send(
-                            "You woke up! Here's the next comic ^_^")
-                        
-                        await send_comic(ctx, comics[0])
+                        "You woke up! Here's the next comic ^_^")
                     
-                    else:
-                        await ctx.send(
-                            "Sorry Clau. Now's not the right time.")
+                    await send_comic(ctx, comics[0])
                 
                 else:
-                    await ctx.send("You don't have permission to read this.")
-            
-            elif len(comics) >= 1 and content.endswith('t'):
-                await ctx.send(file=discord.File(comics[0]))
-
-            elif len(comics) >= 1:
-                await send_comic(ctx, comics[0])
-
-            else:
-                await ctx.send(
-                    "A comic with that number is not available (yet). Sorry!")
-        
-        # Command for fetching the latest comic
-        elif "latest" in content:
-            lv = get_metadata("lviewed")
-            lat = get_metadata("latest")
-
-            if (people[ctx.author.id] in readers and lv < lat and
-                stime <= datetime.now().time() <= etime):
-            
-                    db_update(lv + 1)
-                    await ctx.send("You woke up! Here's the next comic ^_^")
-                    comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
-                    await send_comic(ctx, comic)
+                    await ctx.send(
+                        "Sorry Clau. Now's not the right time.")
             
             else:
-                comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
-                await send_comic(ctx, comic)
-
-                if lat > lv and people[ctx.author.id] in readers:
-                    await ctx.send(
-                        ("Hi Clau! Colin already drew the next comic, "
-                        "but you don't get to see it yet. Sorry!")
-                    )
-
-                elif lat > lv:
-                    await ctx.send(
-                        ("Colin has drawn a newer comic, "
-                        "but it's not available yet. "
-                        "Go bug Claudine if you want to read it.")
-                    )
+                await ctx.send("You don't have permission to read this.")
         
-        elif "rand" in content:
-            lv = get_metadata("lviewed")
-            number = random.randint(1, lv)
-            comic = glob(f"Comics/{str(number).zfill(ND)}*")[0]
-            await send_comic(ctx, comic)
-        
+        elif len(comics) >= 1 and content.endswith('t'):
+            await ctx.send(file=discord.File(comics[0]))
+
+        elif len(comics) >= 1:
+            await send_comic(ctx, comics[0])
+
         else:
             await ctx.send(
-                "I don't recognize that command -- can you try $phelp?")
-
-
-@bot.command(name="latest", help="Gets the latest comic.")
-async def latest(ctx):
-    if ctx.channel.name in channels:
-        lv = get_metadata("lviewed")
-        lat = get_metadata("latest")
-
-        if (people[ctx.author.id] == "Claudine" and
-            stime <= datetime.now().time() <= etime):
-                
-                comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
+                "A comic with that number is not available (yet). Sorry!")
+    
+    # Command for fetching the latest comic
+    elif "latest" in content:
+        if (people[ctx.author.id] in readers and lv < lat and
+            stime <= present <= etime and update != date.today()):
+        
                 db_update(lv + 1)
                 await ctx.send("You woke up! Here's the next comic ^_^")
+                comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
                 await send_comic(ctx, comic)
-
+        
         else:
             comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
             await send_comic(ctx, comic)
@@ -347,11 +308,55 @@ async def latest(ctx):
                 )
 
             elif lat > lv:
-                await ctx.send((
-                    "Colin has drawn a newer comic, "
+                await ctx.send(
+                    ("Colin has drawn a newer comic, "
                     "but it's not available yet. "
-                    "Go bug Claudine if you want to read it."
-                ))
+                    "Go bug Claudine if you want to read it.")
+                )
+    
+    elif "rand" in content:
+        number = random.randint(1, lv)
+        comic = glob(f"Comics/{str(number).zfill(ND)}*")[0]
+        await send_comic(ctx, comic)
+    
+    else:
+        await ctx.send(
+            "I don't recognize that command -- can you try $phelp?")
+
+
+@bot.command(name="latest", help="Gets the latest comic.")
+async def latest(ctx):
+    if ctx.channel.name not in channels:
+        return
+
+    lv = get_metadata("lviewed")
+    lat = get_metadata("latest")
+    update = date(*map(int, get_metadata("updated").split('/')))
+
+    if (people[ctx.author.id] == "Claudine" and
+        stime <= datetime.now().time() <= etime and update != date.today()):
+            
+            comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
+            db_update(lv + 1)
+            await ctx.send("You woke up! Here's the next comic ^_^")
+            await send_comic(ctx, comic)
+
+    else:
+        comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
+        await send_comic(ctx, comic)
+
+        if lat > lv and people[ctx.author.id] in readers:
+            await ctx.send(
+                ("Hi Clau! Colin already drew the next comic, "
+                "but you don't get to see it yet. Sorry!")
+            )
+
+        elif lat > lv:
+            await ctx.send((
+                "Colin has drawn a newer comic, "
+                "but it's not available yet. "
+                "Go bug Claudine if you want to read it."
+            ))
 
 
 @bot.command(name="status", help="Gets the current status of comics.")
