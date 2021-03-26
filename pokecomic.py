@@ -356,13 +356,14 @@ async def latest(ctx):
 
 @bot.command(name="status", help="Gets the current status of comics.")
 async def status(ctx):
-    if ctx.message.channel.name in channels:
-        latest, lview = get_metadata("latest"), get_metadata("lviewed")
+    if ctx.message.channel.name not in channels:
+        return
 
-        await ctx.send((
-            f"{lview} comics have been viewed so far, "
-            f"and #{latest} is the latest drawn."
-        ))
+    latest, lview = get_metadata("latest"), get_metadata("lviewed")
+    await ctx.send((
+        f"{lview} comics have been viewed so far, "
+        f"and #{latest} is the latest drawn."
+    ))
 
 
 @bot.command(name="search", help="Searches for a comic given some text.")
