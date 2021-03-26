@@ -22,6 +22,7 @@ SITE = "https://student.cs.uwaterloo.ca/~cqhe/"
 LEFT = '◀️'
 RIGHT = '▶️'
 PIPLUP_ID = 824140724224000020
+SADPIP_ID = 825045713515315261
 DELETE = '🗑️'
 
 # Apparently Discord now requires bots to have priveleged intentions
@@ -84,6 +85,22 @@ def db_update(comic_num: int) -> None:
     # Update the latest viewed
     comicdata.replace_one(
         {"lviewed": {"$exists": True}}, {"lviewed": comic_num})
+
+
+def valid_comic(pathname: str, lviewed: int=0) -> int:
+    """
+    Checks if a pathname represents a valid comic, i.e.
+    satisfies the naming conventions and is below lviewed
+    (if lviewed is greater than 0).
+
+    Returns the comic's number if the name is valid, and 0 otherwise.
+    """
+
+    parts = pathname.split('/')
+    if len(parts) > 1 and parts[1][:ND].isdigit():
+        return int(parts[1][:ND])
+    else:
+        return -1
     
 
 def get_metadata(field: str) -> int:
@@ -92,6 +109,16 @@ def get_metadata(field: str) -> int:
     """
 
     return comicdata.find_one({field: {"$exists": True}})[field]
+
+def insensitive_glob(pattern):
+    """
+    Does a case-insensitive globbing search.
+    """
+
+    def either(c):
+        return '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c
+    
+    return glob(''.join(map(either, pattern)))
 
 
 async def send_comic(ctx: discord.ext.commands.Context, comic: str):
@@ -336,6 +363,25 @@ async def status(ctx):
             f"{lview} comics have been viewed so far, "
             f"and #{latest} is the latest drawn."
         ))
+
+
+@bot.command(name="search", help="Searches for a comic given some text.")
+async def search(ctx, *keywords):
+    if not ctx.message.channel.name in channels:
+        return
+    
+    lview = get_metadata("lviewed")
+    qtext = ' '.join(keywords)
+    result = insensitive_glob(f"Comics/*{qtext}*.tif")
+    comics = [c for c in result if valid_comic(c, lview)]
+
+    if not comics: # No comics found
+        sad = f"<:sadpip:{SADPIP_ID}>"
+        await ctx.send(f"I couldn't find any comics with that text. {sad}")
+    elif len(comics) == 1:
+        await send_comic(ctx, comics[0])
+    else: # TODO: Make this display the list, and ask for a selection
+        await send_comic(ctx, comics[0])
 
 
 @bot.command(name="rules", help="States the rules of how comics work.")
