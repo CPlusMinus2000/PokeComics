@@ -3,6 +3,7 @@ import os
 import asyncio
 import discord
 import random
+import json
 from discord.ext import commands
 from dotenv import load_dotenv
 from datetime import datetime, date, time
@@ -25,6 +26,9 @@ PIPLUP_ID = 824140724224000020
 SADPIP_ID = 825045713515315261
 DELETE = '🗑️'
 
+# File extensions that Discord can display directly
+DISPLAY = (".png", ".PNG", ".jpg", ".jpeg", ".JPG", ".JPEG")
+
 # Apparently Discord now requires bots to have priveleged intentions
 intents = discord.Intents.all()
 # client = discord.Client(intents=intents)
@@ -40,32 +44,18 @@ Sends a comic. There are some different options available:
  - `$pcomic latest` sends the latest comic that YOU have permission to view.
 """
 
-people = { # This is a dictionary of people in the server
-    414630128602054658: "Colin",
-    624152786392842281: "Claudine",
-    222084166232047616: "William",
-    690682574686650459: "Jessica",
-    453350283242897430: "Oliver",
-    753691662076608512: "Oliver",
-    690682526997676102: "Cynthia",
-    690683382681829418: "Brianna",
-    275699575556407297: "Nick",
-    285333440948338699: "Daniel",
-    260128919380819970: "Terry",
-    690727551567528048: "Jenny",
-    740377202406981633: "Vicki",
-    224999022568407041: "Dayou"
-}
+# This is a dictionary of people in the server
+people = json.load(open("members.json", 'r'))
 
 channels = [ # Channels that comics can be distributed in
     "comics", "botspam"
 ]
 
 # List of authorized people
-authorized = ["Colin"]
+authorized = ["The20thIcosahedron"]
 
 # List of readers
-readers = ["Claudine"]
+readers = ["claudineyip"]
 
 # Start and ending times (so morning comics can only be seen from 6:00-7:30)
 #  but converted to E[SD]T because that's where I'm hosting the bot from
@@ -84,10 +74,12 @@ def db_update(comic_num: int) -> None:
 
     viewstats = comicdata.find_one({"name": "viewstats"})
     viewstats["lviewed"] = comic_num
-    viewstats["updated"] = datetime.now().isoformat()
+    viewstats["updated"] = date.today().isoformat()
+    print(date.today().isoformat())
+    print(viewstats)
 
     # Update the latest viewstats
-    comicdata.replace_one({"name": "viewdata"}, viewstats)
+    comicdata.replace_one({"name": "viewstats"}, viewstats)
 
 
 def valid_comic(pathname: str, lviewed: int=0) -> int:
@@ -104,7 +96,6 @@ def valid_comic(pathname: str, lviewed: int=0) -> int:
         return int(parts[1][:ND])
     else:
         return -1
-    
 
 def get_metadata(field: str) -> int:
     """
@@ -112,6 +103,23 @@ def get_metadata(field: str) -> int:
     """
 
     return comicdata.find_one({"name": "viewstats"})[field]
+
+def fetch_comic(cnum: int, uncoloured: bool=False) -> str:
+    """
+    Gets the comic with number 'cnum' if one exists.
+    If a coloured version exists, it will be selected.
+    """
+
+    clink = glob(f"Comics/{str(cnum).zfill(ND)}*Colour*")
+    if clink and not uncoloured: # Not empty
+        return clink[0]
+    
+    clink = glob(f"Comics/{str(cnum).zfill(ND)}*")
+    if clink: # Not empty
+        return clink[0]
+    
+    # This should hopefully never be reached
+    return "ERROR"
 
 def insensitive_glob(pattern):
     """
@@ -148,13 +156,21 @@ async def edit_comic(msg: discord.Message, comic: str):
     Edits the message link in 'msg' with the comic.
     """
 
-    name = f"{str(Path.home())}/public_html/{os.path.splitext(comic)[0]}.png"
-    if not os.path.exists(name):
-        os.system(f'convert "{comic}" "{name}" > /dev/null')
-        os.system(f"chmod a+rx '{name}'")
+    target = f"{str(Path.home())}/public_html/"
+    if not target.endswith(DISPLAY): # Convert to a displayable type
+        target += f"{os.path.splitext(comic)[0]}.png"
+        if not os.path.exists(target):
+            os.system(f'convert "{comic}" "{target}" > /dev/null')
+            os.system(f"chmod a+rx '{target}'")
+    
+    else: # Just copy it over, and maybe change permissions
+        target += comic
+        if not os.path.exists(target):
+            os.system(f'cp "{comic}" "{target}"')
+            os.system(f"chmod a+rx '{target}'")
 
     #TODO: Replace 4 with an actual not-hardcoded index
-    fname = SITE + '/'.join(name.split('/')[4:]).replace(' ', "%20")
+    fname = SITE + '/'.join(target.split('/')[4:]).replace(' ', "%20")
     await msg.edit(content=fname)
 
 
@@ -169,6 +185,8 @@ async def on_ready():
 
     # members = '\n'.join([f"{m.name} {m.id}" for m in guild.members])
     # print(f'Guild Members:\n - {members}')
+    # f = "members.json"
+    # json.dump({m.id: m.name for m in guild.members}, open(f, 'w'))
     # print(list(bot.emojis))
 
 @bot.event
@@ -179,8 +197,7 @@ async def on_message(message):
     
     cont = message.content.lower()
     if listen and people[message.author.id] in authorized and 'y' in cont:
-        lviewed = get_metadata("lviewed")
-        comic = glob(f"Comics/{str(lviewed).zfill(ND)}*")[0]
+        comic = fetch_comic(get_metadata("lviewed"))
         await send_comic(message.channel, comic)
     
     elif listen and people[message.author.id] in authorized and 'n' in cont:
@@ -206,15 +223,13 @@ async def on_reaction_add(reaction, user):
         cnum = int(comic[:ND])
         lviewed = get_metadata("lviewed")
         latest = get_metadata("latest")
-        update = date(*map(int, get_metadata("updated").split('/')))
+        update = date(*map(int, get_metadata("updated").split('-')))
 
         if reaction.emoji == LEFT and cnum > 1:
-            clink = glob(f"Comics/{str(cnum - 1).zfill(ND)}*")[0]
-            await edit_comic(reaction.message, clink)
+            await edit_comic(reaction.message, fetch_comic(cnum - 1))
         
         elif reaction.emoji == RIGHT and cnum < lviewed:
-            clink = glob(f"Comics/{str(cnum + 1).zfill(ND)}*")[0]
-            await edit_comic(reaction.message, clink)
+            await edit_comic(reaction.message, fetch_comic(cnum + 1))
         
         elif (reaction.emoji == RIGHT and cnum == lviewed and
                 people[user.id] in readers and lviewed < latest and
@@ -222,9 +237,8 @@ async def on_reaction_add(reaction, user):
                 date.today() != update):
             
             # Wow, that is a lot of conditions to check
-            clink = glob(f"Comics/{str(cnum + 1).zfill(ND)}*")[0]
             db_update(cnum + 1)
-            await edit_comic(reaction.message, clink)
+            await edit_comic(reaction.message, fetch_comic(cnum + 1))
         
         await reaction.remove(user)
         await asyncio.sleep(0.5) # So the reactions can't get spammed
@@ -244,13 +258,13 @@ async def comic(ctx, content: str):
     lv = get_metadata("lviewed")
     lat = get_metadata("latest")
     present = datetime.now().time()
-    update = date(*map(int, get_metadata("updated").split('/')))
+    update = date(*map(int, get_metadata("updated").split('-')))
 
     # Check the comic number requested
     if content[:ND].isdigit() and len(content[:ND]) >= ND:
 
         # Get some relevant information
-        comics = glob(f"Comics/{content[:ND]}*")
+        comics = glob(f"Comics/{content[:ND]}*.tif*")
         cnum = int(content[:ND])
         if len(comics) >= 1 and cnum > lv + 1:
             await ctx.send("You don't have permission to access that comic.")
@@ -268,7 +282,7 @@ async def comic(ctx, content: str):
                     await ctx.send(
                         "You woke up! Here's the next comic ^_^")
                     
-                    await send_comic(ctx, comics[0])
+                    await send_comic(ctx, fetch_comic(cnum))
                 
                 else:
                     await ctx.send(
@@ -279,9 +293,12 @@ async def comic(ctx, content: str):
         
         elif len(comics) >= 1 and content.endswith('t'):
             await ctx.send(file=discord.File(comics[0]))
+        
+        elif len(comics) >= 1 and content.endswith('u'):
+            await send_comic(ctx, fetch_comic(cnum, True))
 
         elif len(comics) >= 1:
-            await send_comic(ctx, comics[0])
+            await send_comic(ctx, fetch_comic(cnum))
 
         else:
             await ctx.send(
@@ -294,12 +311,10 @@ async def comic(ctx, content: str):
         
                 db_update(lv + 1)
                 await ctx.send("You woke up! Here's the next comic ^_^")
-                comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
-                await send_comic(ctx, comic)
+                await send_comic(ctx, fetch_comic(lv + 1))
         
         else:
-            comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
-            await send_comic(ctx, comic)
+            await send_comic(ctx, fetch_comic(lv))
 
             if lat > lv and people[ctx.author.id] in readers:
                 await ctx.send(
@@ -316,8 +331,7 @@ async def comic(ctx, content: str):
     
     elif "rand" in content:
         number = random.randint(1, lv)
-        comic = glob(f"Comics/{str(number).zfill(ND)}*")[0]
-        await send_comic(ctx, comic)
+        await send_comic(ctx, fetch_comic(number))
     
     else:
         await ctx.send(
@@ -331,19 +345,17 @@ async def latest(ctx):
 
     lv = get_metadata("lviewed")
     lat = get_metadata("latest")
-    update = date(*map(int, get_metadata("updated").split('/')))
+    update = date(*map(int, get_metadata("updated").split('-')))
 
-    if (people[ctx.author.id] == "Claudine" and
-        stime <= datetime.now().time() <= etime and update != date.today()):
+    if (people[ctx.author.id] in readers and update != date.today() and
+        stime <= datetime.now().time() <= etime and lv < lat):
             
-            comic = glob(f"Comics/{str(lv + 1).zfill(ND)}*")[0]
             db_update(lv + 1)
             await ctx.send("You woke up! Here's the next comic ^_^")
-            await send_comic(ctx, comic)
+            await send_comic(ctx, fetch_comic(lv + 1))
 
     else:
-        comic = glob(f"Comics/{str(lv).zfill(ND)}*")[0]
-        await send_comic(ctx, comic)
+        await send_comic(ctx, fetch_comic(lv))
 
         if lat > lv and people[ctx.author.id] in readers:
             await ctx.send(
@@ -379,7 +391,7 @@ async def search(ctx, *keywords):
     lview = get_metadata("lviewed")
     qtext = ' '.join(keywords)
     result = insensitive_glob(f"Comics/*{qtext}*.tif")
-    comics = [c for c in result if valid_comic(c, lview)]
+    comics = [c for c in result if valid_comic(c, lview) != -1]
 
     if not comics: # No comics found
         sad = f"<:sadpip:{SADPIP_ID}>"
@@ -407,4 +419,5 @@ async def rules(ctx):
         ))
 
 
-bot.run(TOKEN)
+if __name__ == "__main__":
+    bot.run(TOKEN)
