@@ -163,10 +163,13 @@ async def send_comic(ctx, comic: Union[str, int], colour: bool = True):
     await msg.add_reaction(DELETE)
 
 
-async def edit_comic(msg: discord.Message, comic: str):
+async def edit_comic(msg: discord.Message, comic: Union[str, int]):
     """
     Edits the message link in 'msg' with the comic.
     """
+
+    if type(comic) == int:
+        comic = fetch_comic(comic)
 
     target = f"{str(Path.home())}/public_html/"
     if not target.endswith(DISPLAY): # Convert to a displayable type
