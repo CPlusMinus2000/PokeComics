@@ -1,4 +1,4 @@
-#!/usr/bin/python3.7
+#!/usr/bin/python3
 import os
 import asyncio
 import discord
@@ -10,6 +10,7 @@ from datetime import datetime, date, time
 from glob import glob
 from update import comicdata, NUM_DIGITS as ND
 from pathlib import Path
+from typing import Union
 
 # Some Discord authentication information
 load_dotenv()
@@ -104,14 +105,22 @@ def get_metadata(field: str) -> int:
 
     return comicdata.find_one({"name": "viewstats"})[field]
 
-def fetch_comic(cnum: int, uncoloured: bool=False) -> str:
+def get_date(field: str) -> date:
+    """
+    Gets the date given by the 'field' field in comicdata.viewstats.
+    """
+
+    update = comicdata.find_one({"name": "viewstats"})[field]
+    return date(*map(int, update.split('-')))
+
+def fetch_comic(cnum: int, coloured: bool = True) -> str:
     """
     Gets the comic with number 'cnum' if one exists.
     If a coloured version exists, it will be selected.
     """
 
     clink = glob(f"Comics/{str(cnum).zfill(ND)}*Colour*")
-    if clink and not uncoloured: # Not empty
+    if clink and coloured: # Not empty
         return clink[0]
     
     clink = glob(f"Comics/{str(cnum).zfill(ND)}*")
@@ -132,10 +141,13 @@ def insensitive_glob(pattern):
     return glob(''.join(map(either, pattern)))
 
 
-async def send_comic(ctx: discord.ext.commands.Context, comic: str):
+async def send_comic(ctx, comic: Union[str, int], colour: bool = True):
     """
     Sends a comic, and also checks for possible necessary preparations.
     """
+
+    if type(comic) == int:
+        comic = fetch_comic(comic, colour)
 
     name = f"{str(Path.home())}/public_html/{os.path.splitext(comic)[0]}.png"
     if not os.path.exists(name):
@@ -197,8 +209,7 @@ async def on_message(message):
     
     cont = message.content.lower()
     if listen and people[message.author.id] in authorized and 'y' in cont:
-        comic = fetch_comic(get_metadata("lviewed"))
-        await send_comic(message.channel, comic)
+        await send_comic(message.channel, get_metadata("lviewed"))
     
     elif listen and people[message.author.id] in authorized and 'n' in cont:
         await message.channel.send("Understood.")
@@ -223,13 +234,13 @@ async def on_reaction_add(reaction, user):
         cnum = int(comic[:ND])
         lviewed = get_metadata("lviewed")
         latest = get_metadata("latest")
-        update = date(*map(int, get_metadata("updated").split('-')))
+        update = get_date("updated")
 
         if reaction.emoji == LEFT and cnum > 1:
-            await edit_comic(reaction.message, fetch_comic(cnum - 1))
+            await edit_comic(reaction.message, cnum - 1)
         
         elif reaction.emoji == RIGHT and cnum < lviewed:
-            await edit_comic(reaction.message, fetch_comic(cnum + 1))
+            await edit_comic(reaction.message, cnum + 1)
         
         elif (reaction.emoji == RIGHT and cnum == lviewed and
                 people[user.id] in readers and lviewed < latest and
@@ -238,7 +249,7 @@ async def on_reaction_add(reaction, user):
             
             # Wow, that is a lot of conditions to check
             db_update(cnum + 1)
-            await edit_comic(reaction.message, fetch_comic(cnum + 1))
+            await edit_comic(reaction.message, cnum + 1)
         
         await reaction.remove(user)
         await asyncio.sleep(0.5) # So the reactions can't get spammed
@@ -258,7 +269,7 @@ async def comic(ctx, content: str):
     lv = get_metadata("lviewed")
     lat = get_metadata("latest")
     present = datetime.now().time()
-    update = date(*map(int, get_metadata("updated").split('-')))
+    update = get_date("updated")
 
     # Check the comic number requested
     if content[:ND].isdigit() and len(content[:ND]) >= ND:
@@ -282,7 +293,7 @@ async def comic(ctx, content: str):
                     await ctx.send(
                         "You woke up! Here's the next comic ^_^")
                     
-                    await send_comic(ctx, fetch_comic(cnum))
+                    await send_comic(ctx, cnum)
                 
                 else:
                     await ctx.send(
@@ -295,10 +306,10 @@ async def comic(ctx, content: str):
             await ctx.send(file=discord.File(comics[0]))
         
         elif len(comics) >= 1 and content.endswith('u'):
-            await send_comic(ctx, fetch_comic(cnum, True))
+            await send_comic(ctx, cnum, False)
 
         elif len(comics) >= 1:
-            await send_comic(ctx, fetch_comic(cnum))
+            await send_comic(ctx, cnum)
 
         else:
             await ctx.send(
@@ -311,10 +322,10 @@ async def comic(ctx, content: str):
         
                 db_update(lv + 1)
                 await ctx.send("You woke up! Here's the next comic ^_^")
-                await send_comic(ctx, fetch_comic(lv + 1))
+                await send_comic(ctx, lv + 1)
         
         else:
-            await send_comic(ctx, fetch_comic(lv))
+            await send_comic(ctx, lv)
 
             if lat > lv and people[ctx.author.id] in readers:
                 await ctx.send(
@@ -331,7 +342,7 @@ async def comic(ctx, content: str):
     
     elif "rand" in content:
         number = random.randint(1, lv)
-        await send_comic(ctx, fetch_comic(number))
+        await send_comic(ctx, number)
     
     else:
         await ctx.send(
@@ -345,17 +356,17 @@ async def latest(ctx):
 
     lv = get_metadata("lviewed")
     lat = get_metadata("latest")
-    update = date(*map(int, get_metadata("updated").split('-')))
+    update = get_date("updated")
 
     if (people[ctx.author.id] in readers and update != date.today() and
         stime <= datetime.now().time() <= etime and lv < lat):
             
-            db_update(lv + 1)
-            await ctx.send("You woke up! Here's the next comic ^_^")
-            await send_comic(ctx, fetch_comic(lv + 1))
+        db_update(lv + 1)
+        await ctx.send("You woke up! Here's the next comic ^_^")
+        await send_comic(ctx, lv + 1)
 
     else:
-        await send_comic(ctx, fetch_comic(lv))
+        await send_comic(ctx, lv)
 
         if lat > lv and people[ctx.author.id] in readers:
             await ctx.send(
