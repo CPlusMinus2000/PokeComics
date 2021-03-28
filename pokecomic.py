@@ -11,7 +11,7 @@ from glob import glob
 from update import comicdata, NUM_DIGITS as ND
 from pokeapi import get_sprite
 from pathlib import Path
-from typing import Union
+from typing import Union, Tuple
 
 # Some Discord authentication information
 load_dotenv()
@@ -62,8 +62,14 @@ readers = ["claudineyip"]
 
 # Start and ending times (so morning comics can only be seen from 6:00-7:30)
 #  but converted to E[SD]T because that's where I'm hosting the bot from
-stime = time(8, 0, 0)
-etime = time(10, 35, 10, 10)
+def bounds() -> Tuple[time, time]:
+    """Get the left/right bounds of when comics are available."""
+
+    stime = time(8, 0, 0)
+    day = date.today().weekday()
+    etime = time(10, 35, 10, 10) if day < 5 else time(11, 15, 0)
+    
+    return stime, etime
 
 def db_update(comic_num: int) -> None:
     """
@@ -240,6 +246,7 @@ async def on_reaction_add(reaction, user):
         lviewed = get_metadata("lviewed")
         latest = get_metadata("latest")
         update = get_date("updated")
+        stime, etime = bounds()
 
         if reaction.emoji == LEFT and cnum > 1:
             await edit_comic(reaction.message, cnum - 1)
@@ -275,6 +282,7 @@ async def comic(ctx, content: str):
     lat = get_metadata("latest")
     present = datetime.now().time()
     update = get_date("updated")
+    stime, etime = bounds()
 
     # Check the comic number requested
     if content[:ND].isdigit() and len(content[:ND]) >= ND:
@@ -362,6 +370,7 @@ async def latest(ctx):
     lv = get_metadata("lviewed")
     lat = get_metadata("latest")
     update = get_date("updated")
+    stime, etime = bounds()
 
     if (people[ctx.author.id] in readers and update != date.today() and
         stime <= datetime.now().time() <= etime and lv < lat):
@@ -443,7 +452,8 @@ async def pic(ctx, pokemon: str):
         return
     
     pok = pokemon.capitalize()
-    entry = discord.Embed(title=pok, color=discord.Color.blue())
+    url = f"https://bulbapedia.bulbagarden.net/wiki/{pok}_(Pok%C3%A9mon)"
+    entry = discord.Embed(title=pok, url=url, color=discord.Color.blue())
     entry.set_thumbnail(url=get_sprite(pokemon))
 
     await ctx.send(embed=entry)

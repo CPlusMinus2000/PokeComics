@@ -27,7 +27,7 @@ def get_sprite(pokemon: Union[str, int], use_api: bool = False) -> str:
     
     else:
         if type(pokemon) == str:
-            entry = json.load(open(f"{pokemon.lower()}.json"))
+            entry = json.load(open(f"pokedex/{pokemon.lower()}.json"))
             pokemon = int(entry["id"])
         
         return ART + f"{pokemon}.png"
