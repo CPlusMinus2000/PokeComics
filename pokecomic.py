@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from datetime import datetime, date, time
 from glob import glob
 from update import comicdata, NUM_DIGITS as ND
+from pokeapi import get_sprite
 from pathlib import Path
 from typing import Union
 
@@ -47,6 +48,7 @@ Sends a comic. There are some different options available:
 
 # This is a dictionary of people in the server
 people = json.load(open("members.json", 'r'))
+people = {int(p): people[p] for p in people}
 
 channels = [ # Channels that comics can be distributed in
     "comics", "botspam"
@@ -418,19 +420,33 @@ async def search(ctx, *keywords):
 
 @bot.command(name="rules", help="States the rules of how comics work.")
 async def rules(ctx):
-    if ctx.message.channel.name in channels:
-        await ctx.send((
-            "Hi!!! It's ya bot here, comin' at you with a quick heads-up: "
-            "The original intent behind Colin drawing these comics "
-            "is to entice Claudine to wake up early in the mornings. "
-            "Because of this, Colin decided to incentivize Claudine "
-            "by letting her see a new strip of his not-a-fanfiction "
-            "Pokémon comic when he draws them, but ONLY if she gets up "
-            "early enough in the morning (specifically 5:00-7:35 PST).\n\n"
-            "Because of this, the next comic might not be available yet, "
-            "and it'll only come out when she gets up early enough. "
-            "PokeComicsBot out!"
-        ))
+    if ctx.message.channel.name not in channels:
+        return
+
+    await ctx.send((
+        "Hi!!! It's ya bot here, comin' at you with a quick heads-up: "
+        "The original intent behind Colin drawing these comics "
+        "is to entice Claudine to wake up early in the mornings. "
+        "Because of this, Colin decided to incentivize Claudine "
+        "by letting her see a new strip of his not-a-fanfiction "
+        "Pokémon comic when he draws them, but ONLY if she gets up "
+        "early enough in the morning (specifically 5:00-7:35 PST).\n\n"
+        "Because of this, the next comic might not be available yet, "
+        "and it'll only come out when she gets up early enough. "
+        "PokeComicsBot out!"
+    ))
+
+
+@bot.command(name="ic", help="Gets a picture of the Pokémon given.")
+async def pic(ctx, pokemon: str):
+    if ctx.message.channel.name not in channels:
+        return
+    
+    pok = pokemon.capitalize()
+    entry = discord.Embed(title=pok, color=discord.Color.blue())
+    entry.set_thumbnail(url=get_sprite(pokemon))
+
+    await ctx.send(embed=entry)
 
 
 if __name__ == "__main__":
