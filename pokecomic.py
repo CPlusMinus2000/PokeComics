@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from datetime import datetime, date, time
 from glob import glob
 from update import comicdata, NUM_DIGITS as ND
-from pokeapi import get_sprite
+from pokeapi import *
 from pathlib import Path
 from typing import Union, Tuple
 
@@ -67,7 +67,7 @@ def bounds() -> Tuple[time, time]:
 
     stime = time(8, 0, 0)
     day = date.today().weekday()
-    etime = time(10, 35, 10, 10) if day < 5 else time(11, 15, 0)
+    etime = time(10, 35, 10, 10010) if day < 5 else time(11, 20, 20, 20020)
     
     return stime, etime
 
@@ -446,15 +446,23 @@ async def rules(ctx):
     ))
 
 
-@bot.command(name="ic", help="Gets a picture of the Pokémon given.")
+@bot.command(name="okedex", help="Gets a Pokédex entry of the Pokémon given.")
 async def pic(ctx, pokemon: str):
     if ctx.message.channel.name not in channels:
         return
     
+    index = json.load(open("index.json", 'r'))
+    if pokemon.isdigit():
+        pokemon = index[pokemon]
+    
+    info = json.load(open(f"pokedex/{pokemon.lower()}.json", 'r'))
     pok = pokemon.capitalize()
+    title = f"#{info['id']} {pok}"
     url = f"https://bulbapedia.bulbagarden.net/wiki/{pok}_(Pok%C3%A9mon)"
-    entry = discord.Embed(title=pok, url=url, color=discord.Color.blue())
+    entry = discord.Embed(title=title, url=url, description=get_genus(pokemon), color=discord.Color.blue())
     entry.set_thumbnail(url=get_sprite(pokemon))
+    entry.add_field(name="Type(s)", value="\n".join(get_types(pokemon)), inline=True)
+    entry.add_field(name="Abilities", value='\n'.join(get_abilities(pokemon)), inline=True)
 
     await ctx.send(embed=entry)
 
