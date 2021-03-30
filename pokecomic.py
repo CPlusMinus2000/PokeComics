@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from datetime import datetime, date, time
 from glob import glob
 from update import comicdata, NUM_DIGITS as ND
-from pokeapi import *
+from pokeapi import Pokemon
 from pathlib import Path
 from typing import Union, Tuple
 
@@ -20,6 +20,9 @@ GUILD = os.getenv("DISCORD_GUILD")
 
 # Place where I store all the comics
 SITE = "https://student.cs.uwaterloo.ca/~cqhe/"
+
+# Total number of Pokémon that have been discovered
+MAX_POKEMON = 898
 
 # Emojis for reactions
 LEFT = '◀️'
@@ -43,6 +46,7 @@ chelp = """
 Sends a comic. There are some different options available:
  - `$pcomic NNN` sends the comic with number NNN (i.e. 003, 420, etc.).
  - `$pcomic NNNt` is similar, but sends a .tif rather than a .png.
+ - `$pcomic NNNu` sends an uncoloured version of the comic.
  - `$pcomic latest` sends the latest comic that YOU have permission to view.
 """
 
@@ -51,7 +55,7 @@ people = json.load(open("members.json", 'r'))
 people = {int(p): people[p] for p in people}
 
 channels = [ # Channels that comics can be distributed in
-    "comics", "botspam"
+    "comics", "botspam", "cs136-piazza-count-bet"
 ]
 
 # List of authorized people
@@ -210,7 +214,7 @@ async def on_ready():
     # print(f'Guild Members:\n - {members}')
     # f = "members.json"
     # json.dump({m.id: m.name for m in guild.members}, open(f, 'w'))
-    # print(list(bot.emojis))
+    # print(list(guild.emojis))
 
 @bot.event
 async def on_message(message):
@@ -309,8 +313,7 @@ async def comic(ctx, content: str):
                     await send_comic(ctx, cnum)
                 
                 else:
-                    await ctx.send(
-                        "Sorry Clau. Now's not the right time.")
+                    await ctx.send("Sorry Clau. Now's not the right time.")
             
             else:
                 await ctx.send("You don't have permission to read this.")
@@ -453,18 +456,44 @@ async def pic(ctx, pokemon: str):
     
     index = json.load(open("index.json", 'r'))
     if pokemon.isdigit():
-        pokemon = index[pokemon]
+        pokemon = int(pokemon)
+        if pokemon > MAX_POKEMON or pokemon < 1:
+            await ctx.send("Hm... I've never met a Pokémon with that number.")
+            return
+
+        pokemon = index[str(pokemon)]
     
-    info = json.load(open(f"pokedex/{pokemon.lower()}.json", 'r'))
+    info = Pokemon(pokemon.lower())
     pok = pokemon.capitalize()
-    title = f"#{info['id']} {pok}"
+    title = f"#{info.id} {pok}"
     url = f"https://bulbapedia.bulbagarden.net/wiki/{pok}_(Pok%C3%A9mon)"
-    entry = discord.Embed(title=title, url=url, description=get_genus(pokemon), color=discord.Color.blue())
-    entry.set_thumbnail(url=get_sprite(pokemon))
-    entry.add_field(name="Type(s)", value="\n".join(get_types(pokemon)), inline=True)
-    entry.add_field(name="Abilities", value='\n'.join(get_abilities(pokemon)), inline=True)
+    entry = discord.Embed(
+        title=title, url=url, 
+        description=info.get_genus(), 
+        color=discord.Color.blue()
+    )
+
+    guild = discord.utils.get(bot.guilds, name=GUILD)
+    typemojis = [f"{discord.utils.get(guild.emojis, name=t)} {t.capitalize()}"
+                    for t in info.get_types()]
+    
+    typeinfo = '\n'.join(typemojis)
+    # typeinfo = '\n'.join(info.get_types(True))
+    entry.set_thumbnail(url=info.get_sprite())
+    entry.add_field(name="Type(s)", value=typeinfo, inline=True)
+    
+    entry.add_field(name="Abilities", value='\n'.join(
+        info.get_abilities()), inline=True)
 
     await ctx.send(embed=entry)
+
+
+@bot.command(name="iazza", help="Gets the current Piazza post count for 136.")
+async def piazza(ctx):
+    from update import client
+    meta = client.Piazza.meta
+    highest = meta.find_one({"highest": {"$exists": True}})["highest"] - 1
+    await ctx.send(f"Currently, there are {highest} Piazza posts. Yikes!")
 
 
 if __name__ == "__main__":
