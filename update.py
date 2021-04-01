@@ -49,4 +49,4 @@ if __name__ == "__main__":
     # Add the numeric value of the latest comic
     viewstats = comicdata.find_one({"name": "viewstats"})
     viewstats["latest"] = latest
-    comicdata.replace_one({"name", "viewstats"}, viewstats, True)
+    comicdata.replace_one({"name": "viewstats"}, viewstats, True)

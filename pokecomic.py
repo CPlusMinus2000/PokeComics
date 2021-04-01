@@ -158,7 +158,7 @@ async def send_comic(ctx, comic: Union[str, int], colour: bool = True):
     Sends a comic, and also checks for possible necessary preparations.
     """
 
-    if type(comic) == int:
+    if isinstance(comic, int):
         comic = fetch_comic(comic, colour)
 
     name = f"{str(Path.home())}/public_html/{os.path.splitext(comic)[0]}.png"
@@ -180,7 +180,7 @@ async def edit_comic(msg: discord.Message, comic: Union[str, int]):
     Edits the message link in 'msg' with the comic.
     """
 
-    if type(comic) == int:
+    if isinstance(comic, int):
         comic = fetch_comic(comic)
 
     target = f"{str(Path.home())}/public_html/"
@@ -292,7 +292,7 @@ async def comic(ctx, content: str):
     if content[:ND].isdigit() and len(content[:ND]) >= ND:
 
         # Get some relevant information
-        comics = glob(f"Comics/{content[:ND]}*.tif*")
+        comics = glob(f"Comics/{content[:ND]}*")
         cnum = int(content[:ND])
         if len(comics) >= 1 and cnum > lv + 1:
             await ctx.send("You don't have permission to access that comic.")
@@ -409,6 +409,17 @@ async def status(ctx):
         f"{lview} comics have been viewed so far, "
         f"and #{latest} is the latest drawn."
     ))
+
+
+@bot.command(name="statsu", help="Gets the current statsu of comics.")
+async def statsu(ctx):
+    if ctx.message.channel.name not in channels:
+        return
+
+    latest, lview = get_metadata("latest"), get_metadata("lviewed")
+    await ctx.send(
+        f"これまでに{lview}冊の漫画が描かれ、最新の漫画は{latest}冊です。"
+    )
 
 
 @bot.command(name="search", help="Searches for a comic given some text.")
