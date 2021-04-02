@@ -8,7 +8,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from datetime import datetime, date, time
 from glob import glob
-from update import comicdata, NUM_DIGITS as ND
+from update import client, comicdata, NUM_DIGITS as ND
 from pokeapi import Pokemon
 from pathlib import Path
 from typing import Union, Tuple
@@ -64,6 +64,20 @@ authorized = ["The20thIcosahedron"]
 # List of readers
 readers = ["claudineyip"]
 
+# Colours
+COLOURS = {
+    "black": discord.Color.from_rgb(0, 0, 0),
+    "blue": discord.Color.blue(),
+    "brown": discord.Color.from_rgb(165, 42, 42),
+    "gray": discord.Color.light_gray(),
+    "green": discord.Color.green(),
+    "pink": discord.Color.from_rgb(255, 192, 203),
+    "purple": discord.Color.purple(),
+    "red": discord.Color.red(),
+    "white": discord.Color.from_rgb(255, 255, 255),
+    "yellow": discord.Color.gold()
+}
+
 # Start and ending times (so morning comics can only be seen from 6:00-7:30)
 #  but converted to E[SD]T because that's where I'm hosting the bot from
 def bounds() -> Tuple[time, time]:
@@ -88,8 +102,6 @@ def db_update(comic_num: int) -> None:
     viewstats = comicdata.find_one({"name": "viewstats"})
     viewstats["lviewed"] = comic_num
     viewstats["updated"] = date.today().isoformat()
-    print(date.today().isoformat())
-    print(viewstats)
 
     # Update the latest viewstats
     comicdata.replace_one({"name": "viewstats"}, viewstats)
@@ -244,7 +256,7 @@ async def on_reaction_add(reaction, user):
     
     cont = reaction.message.content
     if SITE in cont and reaction.emoji in [LEFT, RIGHT]: 
-        # Comic embed message
+        # Comic message
         comic = cont.split('/')[-1]
         cnum = int(comic[:ND])
         lviewed = get_metadata("lviewed")
@@ -362,7 +374,8 @@ async def comic(ctx, content: str):
     
     else:
         await ctx.send(
-            "I don't recognize that command -- can you try $phelp?")
+            "I don't recognize that command -- can you try $phelp?"
+        )
 
 
 @bot.command(name="latest", help="Gets the latest comic.")
@@ -481,7 +494,7 @@ async def pic(ctx, pokemon: str):
     entry = discord.Embed(
         title=title, url=url, 
         description=info.get_genus(), 
-        color=discord.Color.blue()
+        color=COLOURS[info.colour]
     )
 
     guild = discord.utils.get(bot.guilds, name=GUILD)
@@ -492,16 +505,17 @@ async def pic(ctx, pokemon: str):
     # typeinfo = '\n'.join(info.get_types(True))
     entry.set_thumbnail(url=info.get_sprite())
     entry.add_field(name="Type(s)", value=typeinfo, inline=True)
-    
     entry.add_field(name="Abilities", value='\n'.join(
         info.get_abilities()), inline=True)
+    
+    entry.add_field(name="Catch Rate", value=str(info.capture), inline=True)
+    entry.set_footer(text=info.get_flavour())
 
     await ctx.send(embed=entry)
 
 
 @bot.command(name="iazza", help="Gets the current Piazza post count for 136.")
 async def piazza(ctx):
-    from update import client
     meta = client.Piazza.meta
     highest = meta.find_one({"highest": {"$exists": True}})["highest"] - 1
     await ctx.send(f"Currently, there are {highest} Piazza posts. Yikes!")
