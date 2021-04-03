@@ -19,6 +19,9 @@
     ],
     "base_happiness": 70,
     "capture_rate": 45,
+    "characters": [
+        "Pip"
+    ],
     "color": {
         "name": "blue",
         "url": "https://pokeapi.co/api/v2/pokemon-color/2/"

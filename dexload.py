@@ -20,7 +20,8 @@ def scrape_dex(init: int = 1) -> None:
         try:
             with urllib.request.urlopen(req) as url:
                 data = json.loads(url.read().decode())
-                json.dump(data, open(f"pokedex/{data['name']}.json", 'w'))
+                json.dump(data, open(f"pokedex/{data['name']}.json", 'w'),
+                            indent=4)
         
         except Exception as e:
             if e == urllib.error.HTTPError:
@@ -95,7 +96,7 @@ def pull_pokemon(folder: str = "pokeapi", init: int = 1) -> None:
                 pok = pok[0]
             
             f = f"{folder}/{pok.name}.json"
-            json.dump(todict(pok), open(f, 'w'), sort_keys=True)
+            json.dump(todict(pok), open(f, 'w'), indent=4, sort_keys=True)
         
         except Exception as e:
             raise
@@ -120,7 +121,7 @@ def add_attributes(*attrs, init: int = 1) -> List[str]:
                 dex_entry[attr] = api_entry[attr]
             
             json.dump(dex_entry, open(f"pokedex/{name}.json", 'w'), 
-                        sort_keys=True)
+                        indent=4, sort_keys=True)
         
         except FileNotFoundError:
             special.append(name)

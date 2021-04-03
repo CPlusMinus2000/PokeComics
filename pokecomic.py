@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from datetime import datetime, date, time
 from glob import glob
 from update import client, comicdata, NUM_DIGITS as ND
-from pokeapi import Pokemon
+from pokeapi import Pokemon, special_cases
 from pathlib import Path
 from typing import Union, Tuple
 
@@ -474,10 +474,11 @@ async def rules(ctx):
 
 
 @bot.command(name="okedex", help="Gets a Pokédex entry of the Pokémon given.")
-async def pic(ctx, pokemon: str):
+async def pic(ctx, *args):
     if ctx.message.channel.name not in channels:
         return
     
+    pokemon = ' '.join(args)
     index = json.load(open("index.json", 'r'))
     if pokemon.isdigit():
         pokemon = int(pokemon)
@@ -487,16 +488,21 @@ async def pic(ctx, pokemon: str):
 
         pokemon = index[str(pokemon)]
     
+    else:
+        pokemon = special_cases(pokemon)
+    
     info = Pokemon(pokemon.lower())
-    pok = pokemon.capitalize()
+    pok = info.punctuate()
+    poku = pok.replace(' ', '_')
     title = f"#{info.id} {pok}"
-    url = f"https://bulbapedia.bulbagarden.net/wiki/{pok}_(Pok%C3%A9mon)"
+    url = f"https://bulbapedia.bulbagarden.net/wiki/{poku}_(Pok%C3%A9mon)"
     entry = discord.Embed(
         title=title, url=url, 
         description=info.get_genus(), 
         color=COLOURS[info.colour]
     )
 
+    # Crap tons of info embedding
     guild = discord.utils.get(bot.guilds, name=GUILD)
     typemojis = [f"{discord.utils.get(guild.emojis, name=t)} {t.capitalize()}"
                     for t in info.get_types()]
@@ -509,6 +515,13 @@ async def pic(ctx, pokemon: str):
         info.get_abilities()), inline=True)
     
     entry.add_field(name="Catch Rate", value=str(info.capture), inline=True)
+    entry.add_field(name="Height/Weight", value=info.get_size(), inline=True)
+    entry.add_field(name="Characters", value=','.join(info.characters),
+        inline=True)
+    
+    entry.add_field(name="Gender Ratio", value=info.format_gender(),
+        inline=True)
+    
     entry.set_footer(text=info.get_flavour())
 
     await ctx.send(embed=entry)
