@@ -11,7 +11,7 @@ from glob import glob
 from update import client, comicdata, NUM_DIGITS as ND
 from pokeapi import Pokemon, special_cases
 from pathlib import Path
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 # Some Discord authentication information
 load_dotenv()
@@ -154,7 +154,7 @@ def fetch_comic(cnum: int, coloured: bool = True) -> str:
     # This should hopefully never be reached
     return "ERROR"
 
-def insensitive_glob(pattern):
+def insensitive_glob(pattern) -> List[str]:
     """
     Does a case-insensitive globbing search.
     """
@@ -163,6 +163,21 @@ def insensitive_glob(pattern):
         return '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c
     
     return glob(''.join(map(either, pattern)))
+
+
+def leading_num(s: str, stop: int = -1) -> int:
+    """
+    Tries to find as many digit characters at the start of s as possible,
+    returning results as an integer, stopping at `stop` if stop >= 0.
+
+    If there are no such digits, the function throws an error.
+    """
+
+    i = 1
+    while s[:i].isdigit() and i <= len(s) and (stop < 0 or i < stop):
+        i += 1
+    
+    return int(s[:(i - 1)])
 
 
 async def send_comic(ctx, comic: Union[str, int], colour: bool = True):
@@ -301,11 +316,11 @@ async def comic(ctx, content: str):
     stime, etime = bounds()
 
     # Check the comic number requested
-    if content[:ND].isdigit() and len(content[:ND]) >= ND:
+    if content[0].isdigit():
 
         # Get some relevant information
-        comics = glob(f"Comics/{content[:ND]}*")
-        cnum = int(content[:ND])
+        cnum = leading_num(content)
+        comics = glob(f"Comics/{str(cnum).zfill(ND)}*")
         if len(comics) >= 1 and cnum > lv + 1:
             await ctx.send("You don't have permission to access that comic.")
         
@@ -319,9 +334,7 @@ async def comic(ctx, content: str):
             elif people[ctx.author.id] in readers:
                 if stime <= present <= etime and update != date.today():
                     db_update(cnum)
-                    await ctx.send(
-                        "You woke up! Here's the next comic ^_^")
-                    
+                    await ctx.send("You woke up! Here's the next comic ^_^")
                     await send_comic(ctx, cnum)
                 
                 else:
@@ -331,7 +344,8 @@ async def comic(ctx, content: str):
                 await ctx.send("You don't have permission to read this.")
         
         elif len(comics) >= 1 and content.endswith('t'):
-            await ctx.send(file=discord.File(comics[0]))
+            tiff = next(c for c in comics if c.endswith("tif"))
+            await ctx.send(file=discord.File(tiff))
         
         elif len(comics) >= 1 and content.endswith('u'):
             await send_comic(ctx, cnum, False)
@@ -424,7 +438,7 @@ async def status(ctx):
     ))
 
 
-@bot.command(name="statsu", help="Gets the current statsu of comics.")
+@bot.command(name="statsu", help="コミックの現在のstatsuを取得します。")
 async def statsu(ctx):
     if ctx.message.channel.name not in channels:
         return
