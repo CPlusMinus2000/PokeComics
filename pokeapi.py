@@ -146,9 +146,9 @@ class Pokemon:
 
         abilities = []
         for a in self.attrs["abilities"]:
-            name = a["ability"]["name"]
-            link = ABILITY % name.capitalize()
-            message = f"[{name.capitalize()}]({link})"
+            name = a["ability"]["name"].title()
+            link = ABILITY % name.replace('-', '_')
+            message = f"[{name.replace('-', ' ')}]({link})"
 
             if a["is_hidden"]: # Put spoiler tags over the link
                 message = f"||{message}||"

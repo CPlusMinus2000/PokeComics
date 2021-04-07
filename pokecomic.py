@@ -528,7 +528,10 @@ async def pic(ctx, *args):
     entry.add_field(name="Abilities", value='\n'.join(
         info.get_abilities()), inline=True)
     
-    entry.add_field(name="Catch Rate", value=str(info.capture), inline=True)
+    cr = "https://bulbapedia.bulbagarden.net/wiki/Catch_rate"
+    entry.add_field(name="Catch Rate", value=f"[{info.capture}]({cr})", 
+        inline=True)
+    
     entry.add_field(name="Height/Weight", value=info.get_size(), inline=True)
     entry.add_field(name="Characters", value=','.join(info.characters),
         inline=True)
