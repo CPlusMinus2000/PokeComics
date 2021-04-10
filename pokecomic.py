@@ -449,6 +449,12 @@ async def statsu(ctx):
     )
 
 
+@bot.command(name="gstatsu", help="Gives/removes G-statsu.")
+async def gstatsu(ctx, name: str):
+    # Probably want to have this take @'s?
+    pass
+
+
 @bot.command(name="search", help="Searches for a comic given some text.")
 async def search(ctx, *keywords):
     if not ctx.message.channel.name in channels:
@@ -549,6 +555,20 @@ async def piazza(ctx):
     meta = client.Piazza.meta
     highest = meta.find_one({"highest": {"$exists": True}})["highest"] - 1
     await ctx.send(f"Currently, there are {highest} Piazza posts. Yikes!")
+
+
+@bot.command(name="ipsum", help="Gets a bit of lorem ipsum text.")
+async def ipsum(ctx, options: str = "s"):
+    import lorem
+
+    if options.startswith('s'):
+        await ctx.send(lorem.sentence())
+    elif options.startswith('p'):
+        await ctx.send(lorem.paragraph())
+    elif options.startswith('t'):
+        await ctx.send(lorem.text())
+    else:
+        await ctx.send("I don't recog- I mean, Lorem ipsum dolor sit amet.")
 
 
 if __name__ == "__main__":

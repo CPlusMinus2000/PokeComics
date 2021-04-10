@@ -1,0 +1,12 @@
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+ccvenv
+.env
+package.json
+pokeapi/*.json
+*.log
+__pycache__
+node_modules
