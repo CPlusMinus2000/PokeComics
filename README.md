@@ -1,8 +1,7 @@
-# PokeComics
-A bot and related tools for Pokemon comic distribution
+## PokeComics
+A bot and related tools for Pokémon comic distribution
 
-NOTE: Pokebase was a little broken, had to change 'other-sprites'
-to 'other' in common.py
+Join link: https://discord.com/api/oauth2/authorize?client_id=822938185696411679&permissions=1074260032&scope=bot
 
 
 
