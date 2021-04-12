@@ -249,6 +249,9 @@ async def on_message(message):
     if message.author == bot.user:
         return
     
+    if bot.user.mentioned_in(message):
+        await message.channel.send("Hi! What can I do for you?")
+    
     cont = message.content.lower()
     if listen and people[message.author.id] in authorized and 'y' in cont:
         await send_comic(message.channel, get_metadata("lviewed"))
