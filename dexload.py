@@ -20,8 +20,9 @@ def scrape_dex(init: int = 1) -> None:
         try:
             with urllib.request.urlopen(req) as url:
                 data = json.loads(url.read().decode())
+                data["characters"] = []
                 json.dump(data, open(f"pokedex/{data['name']}.json", 'w'),
-                            indent=4)
+                            indent=4, sort_keys=True)
         
         except Exception as e:
             if e == urllib.error.HTTPError:
@@ -48,7 +49,7 @@ def build_index(folder: str = "pokedex", index: str = "index.json") -> None:
             entry = json.load(open(f"{folder}/{filename}", 'r'))
             data[int(entry["id"])] = entry["name"]
     
-    json.dump(data, open(index, 'w'), sort_keys=True)
+    json.dump(data, open(index, 'w'), indent=4, sort_keys=True)
 
 
 def todict(obj, classkey=None):

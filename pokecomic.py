@@ -1,9 +1,10 @@
 #!/usr/bin/python3
-import os
+import os, sys
 import asyncio
 import discord
 import random
 import json
+import contextlib
 from discord.ext import commands
 from dotenv import load_dotenv
 from datetime import datetime, date, time
@@ -12,6 +13,7 @@ from update import client, comicdata, NUM_DIGITS as ND
 from pokeapi import Pokemon, special_cases
 from pathlib import Path
 from typing import Union, Tuple, List
+from io import StringIO
 
 # Some Discord authentication information
 load_dotenv()
@@ -107,18 +109,21 @@ def db_update(comic_num: int) -> None:
     comicdata.replace_one({"name": "viewstats"}, viewstats)
 
 
-def valid_comic(pathname: str, lviewed: int=0) -> int:
+def valid_comic(pathname: str, lviewed: int = 0) -> int:
     """
     Checks if a pathname represents a valid comic, i.e.
     satisfies the naming conventions and is below lviewed
     (if lviewed is greater than 0).
 
-    Returns the comic's number if the name is valid, and 0 otherwise.
+    Returns the comic's number if the name is valid, and -1 otherwise.
     """
 
     parts = pathname.split('/')
-    if len(parts) > 1 and parts[1][:ND].isdigit():
+    if len(parts) > 1 and parts[1][:ND].isdigit() and lviewed <= 0:
         return int(parts[1][:ND])
+    elif len(parts) > 1 and parts[1][:ND].isdigit():
+        cnum = int(parts[1][:ND])
+        return cnum if cnum <= lviewed else -1
     else:
         return -1
 
@@ -180,6 +185,21 @@ def leading_num(s: str, stop: int = -1) -> int:
     return int(s[:(i - 1)])
 
 
+@contextlib.contextmanager
+def stdoutIO(stdout=None):
+    """
+    Does some stuff with input/output for exec.
+    """
+
+    old = sys.stdout
+    if stdout is None:
+        stdout = StringIO()
+    
+    sys.stdout = stdout
+    yield stdout
+    sys.stdout = old
+
+
 async def send_comic(ctx, comic: Union[str, int], colour: bool = True):
     """
     Sends a comic, and also checks for possible necessary preparations.
@@ -239,8 +259,16 @@ async def on_ready():
 
     # members = '\n'.join([f"{m.name} {m.id}" for m in guild.members])
     # print(f'Guild Members:\n - {members}')
-    # f = "members.json"
-    # json.dump({m.id: m.name for m in guild.members}, open(f, 'w'))
+
+    if False: # This exists so I can regenerate the members list
+        members = {}
+        for g in bot.guilds:
+            for m in g.members:
+                members[m.id] = m.name
+        
+        with open("members.json", 'w') as f:
+            json.dump(members, f, indent=4, sort_keys=True)
+    
     # print(list(guild.emojis))
 
 @bot.event
@@ -249,7 +277,7 @@ async def on_message(message):
     if message.author == bot.user:
         return
     
-    if bot.user.mentioned_in(message):
+    if bot.user.mentioned_in(message) and "everyone" not in message.content:
         await message.channel.send("Hi! What can I do for you?")
     
     cont = message.content.lower()
@@ -263,6 +291,9 @@ async def on_message(message):
         await message.reply(content="Thanks! I try my best.")
     
     listen = False
+    if message.content.startswith("$p "):
+        message.content = "$p" + message.content[2:].lstrip()
+    
     await bot.process_commands(message)
 
 
@@ -302,6 +333,27 @@ async def on_reaction_add(reaction, user):
     
     elif SITE in cont and reaction.emoji == DELETE:
         await reaction.message.delete()
+
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.errors.CommandNotFound):
+        await ctx.send(f"{str(error)}. Maybe try $phelp?")
+        return
+    
+    elif isinstance(error, commands.errors.CommandInvokeError):
+        await ctx.send(str(error))
+        return
+    
+    elif isinstance(error, commands.errors.UnexpectedQuoteError):
+        await ctx.send(str(error))
+        return
+    
+    elif isinstance(error, commands.errors.InvalidEndOfQuotedStringError):
+        await ctx.send(str(error))
+        return
+    
+    raise error
 
 # This is the real meat of the bot
 @bot.command(name="comic", help=chelp)
@@ -556,7 +608,7 @@ async def pic(ctx, *args):
 @bot.command(name="iazza", help="Gets the current Piazza post count for 136.")
 async def piazza(ctx):
     meta = client.Piazza.meta
-    highest = meta.find_one({"highest": {"$exists": True}})["highest"] - 1
+    highest = meta.find_one({"name": "meta"})["highest"] - 1
     await ctx.send(f"Currently, there are {highest} Piazza posts. Yikes!")
 
 
@@ -572,6 +624,52 @@ async def ipsum(ctx, options: str = "s"):
         await ctx.send(lorem.text())
     else:
         await ctx.send("I don't recog- I mean, Lorem ipsum dolor sit amet.")
+
+
+@bot.command(name="", help="empty...")
+async def empty(ctx):
+    await ctx.send(random.sample([
+        "...",
+        "_wind blows_",
+        "_crickets chirp_",
+        "no thoughts, head empty",
+        ""
+    ], 1)[0])
+
+DISALLOWED = ["quit(", "exit(", "eval(", "exec("]
+
+@bot.command(name="ython", help="Does Python evaluation.")
+async def bot_eval(ctx, *args):
+    code = ' '.join(args)
+    if any(d in code for d in DISALLOWED):
+        sad = bot.get_emoji(SADPIP_ID)
+        await ctx.send(f"Hey, that's not very nice {sad}")
+    elif "TOKEN" not in code and "os." not in code:
+        await ctx.send(str(eval(code, {}))[:2000])
+    else:
+        await ctx.send("Nice try, wise guy.")
+    
+
+@bot.command(name="ython2", help="Does Python execution.")
+async def bot_exec(ctx, *args):
+    code = ' '.join(args)
+    if any(d in code for d in DISALLOWED):
+        sad = bot.get_emoji(SADPIP_ID)
+        await ctx.send(f"Hey, that's not very nice {sad}")
+        return
+    
+    if "import" in code:
+        await ctx.send("Sorry, no fun allowed.")
+        return
+    
+    with stdoutIO() as s:
+        try:
+            exec(code, {})
+        except:
+            print("Something wrong with the code")
+            raise
+    
+    await ctx.send(s.getvalue()[:2000])
 
 
 if __name__ == "__main__":
