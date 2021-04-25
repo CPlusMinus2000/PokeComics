@@ -1,0 +1,62 @@
+---
+# Comic command dialogue
+comic_help: | 
+    Sends a comic. There are some different options available:
+    - `$pcomic NNN` sends the comic with number NNN (i.e. 003, 420, etc.).
+    - `$pcomic NNNt` is similar, but sends a .tif rather than a .png.
+    - `$pcomic NNNu` sends an uncoloured version of the comic.
+    - `$pcomic latest` sends the latest comic that YOU have permission to view.
+
+comic_high: You don't have permission to access that comic.
+comic_sure: Are you sure you want to release a new comic? (y/n)
+comic_wake: You woke up! Here's the next comic ^_^
+comic_same_day: Ooh... you only get one a day, Clau.
+comic_late: Sorry Clau, now's no longer the right time.
+comic_wrong_person: You don't have permission to read this.
+comic_unavailable: A comic with that number is not available (yet). Sorry!
+comic_hiding: >
+    Hi Clau! Colin already drew the next comic,
+    but you don't get to see it yet. Sorry!
+
+comic_hiding_else: >
+    Colin has drawn a newer comic, 
+    but it's not available yet. 
+    Go bug Claudine if you want to read it.
+
+comic_unrecognized: I don't recognize that command -- could you try $phelp?
+
+# Latest command dialogue (there is some overlap with comic)
+latest_help: Gets the latest comic.
+
+# Status command dialogue
+status_help: Gets the current status of comics.
+status_msg: "%d comics have been viewed so far, and #%d is the latest drawn."
+statsu_help: コミックの現在のstatsuを取得します。
+statsu_msg: "これまでに%d冊の漫画が描かれ、最新の漫画は%d冊です。"
+
+# Search command dialogue
+search_help: Searches for a comic given some text.
+search_fail: "I couldn't find any comics with that text. %s"
+
+# Rules command dialogue
+rules_help: States the rules of how comics work.
+rules_msg: > 
+    Hi!!! It's ya bot here, comin' at you with a quick heads-up: 
+    The original intent behind Colin drawing these comics 
+    is to entice Claudine to wake up early in the mornings. 
+    Because of this, Colin decided to incentivize Claudine 
+    by letting her see a new strip of his not-a-fanfiction 
+    Pokémon comic when he draws them, but ONLY if she gets up 
+    early enough in the morning (specifically 5:00-7:35 PST).
+
+    
+    Because of this, the next comic might not be available yet, 
+    and it'll only come out when she gets up early enough. 
+    PokeComicsBot out!
+
+# Pokédex command dialogue
+dex_help: Gets a Pokédex entry of the Pokémon given.
+dex_fail: Hm... I've never met a Pokémon with that number.
+
+# General dialogue
+construction: Under construction. Please check back later.

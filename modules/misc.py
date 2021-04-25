@@ -1,0 +1,41 @@
+"""Miscellaneous helper functions for processing information"""
+from typing import Tuple, List
+from datetime import date, time
+from glob import glob
+
+
+# Start and ending times (so morning comics can only be seen from 6:00-7:30)
+#  but converted to E[SD]T because that's where I'm hosting the bot from
+def bounds() -> Tuple[time, time]:
+    """Get the left/right bounds of when comics are available."""
+
+    stime = time(8, 0, 0)
+    day = date.today().weekday()
+    etime = time(10, 35, 10, 10010) if day < 5 else time(11, 20, 20, 20020)
+    
+    return stime, etime
+
+def insensitive_glob(pattern) -> List[str]:
+    """
+    Does a case-insensitive globbing search.
+    """
+
+    def either(c):
+        return '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c
+    
+    return glob(''.join(map(either, pattern)))
+
+
+def leading_num(s: str, stop: int = -1) -> int:
+    """
+    Tries to find as many digit characters at the start of s as possible,
+    returning results as an integer, stopping at `stop` if stop >= 0.
+
+    If there are no such digits, the function throws an error.
+    """
+
+    i = 1
+    while s[:i].isdigit() and i <= len(s) and (stop < 0 or i < stop):
+        i += 1
+    
+    return int(s[:(i - 1)])
