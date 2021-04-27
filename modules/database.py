@@ -44,7 +44,7 @@ def update_members(members: Dict[str, str]) -> None:
 
     m = comicdata.find_one({"name": "viewstats"})
     for member in members:
-        m["members"][member] = members[member]
+        m["members"][str(member)] = members[member]
     
     comicdata.replace_one({"name": "viewstats"}, m)
 

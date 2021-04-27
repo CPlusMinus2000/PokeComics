@@ -30,10 +30,6 @@ DISPLAY = (".png", ".PNG", ".jpg", ".jpeg", ".JPG", ".JPEG")
 people = get_metadata("members")
 people = {int(p): people[p] for p in people}
 
-channels = [ # Channels that comics can be distributed in
-    "comics", "botspam", "cs136-piazza-count-bet"
-]
-
 # List of authorized people
 authorized = ["The20thIcosahedron"]
 

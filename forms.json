@@ -1,0 +1,121 @@
+{
+    "deoxys": [
+        "deoxys-normal",
+        "deoxys-attack",
+        "deoxys-defense",
+        "deoxys-speed"
+    ],
+    "wormadam": [
+        "wormadam-plant",
+        "wormadam-sandy",
+        "wormadam-trash"
+    ],
+    "giratina": [
+        "giratina-altered",
+        "giratina-origin"
+    ],
+    "shaymin": [
+        "shaymin-land",
+        "shaymin-sky"
+    ],
+    "basculin": [
+        "basculin-red-striped",
+        "basculin-blue-striped"
+    ],
+    "darmanitan": [
+        "darmanitan-standard",
+        "darmanitan-zen"
+    ],
+    "tornadus": [
+        "tornadus-incarnate",
+        "tornadus-therian"
+    ],
+    "thundurus": [
+        "thundurus-incarnate",
+        "thundurus-therian"
+    ],
+    "landorus": [
+        "landorus-incarnate",
+        "landorus-therian"
+    ],
+    "keldeo": [
+        "keldeo-ordinary",
+        "keldeo-resolute"
+    ],
+    "meloetta": [
+        "meloetta-aria",
+        "meloetta-pirouette"
+    ],
+    "meowstic": [
+        "meowstic-male",
+        "meowstic-female"
+    ],
+    "aegislash": [
+        "aegislash-shield",
+        "aegislash-blade"
+    ],
+    "pumpkaboo": [
+        "pumpkaboo-average",
+        "pumpkaboo-small",
+        "pumpkaboo-large",
+        "pumpkaboo-super"
+    ],
+    "gourgeist": [
+        "gourgeist-average",
+        "gourgeist-small",
+        "gourgeist-large",
+        "gourgeist-super"
+    ],
+    "oricorio": [
+        "oricorio-baile",
+        "oricorio-pom-pom",
+        "oricorio-pau",
+        "oricorio-sensu"
+    ],
+    "lycanroc": [
+        "lycanroc-midday",
+        "lycanroc-midnight",
+        "lycanroc-dusk"
+    ],
+    "wishiwashi": [
+        "wishiwashi-solo",
+        "wishiwashi-school"
+    ],
+    "minior": [
+        "minior-red-meteor",
+        "minior-orange-meteor",
+        "minior-yellow-meteor",
+        "minior-green-meteor",
+        "minior-blue-meteor",
+        "minior-indigo-meteor",
+        "minior-violet-meteor"
+    ],
+    "mimikyu": [
+        "mimikyu-disguised",
+        "mimikyu-busted"
+    ],
+    "toxtricity": [
+        "toxtricity-amped",
+        "toxtricity-low-key"
+    ],
+    "indeedee": [
+        "indeedee-male",
+        "indeedee-female"
+    ],
+    "eiscue": [
+        "eiscue-ice",
+        "eiscue-noice"
+    ],
+    "zacian": [
+        "zacian-hero",
+        "zacian-crowned"
+    ],
+    "zamazenta": [
+        "zamazenta-hero",
+        "zamazenta-crowned"
+    ],
+    "urshifu": [
+        "urshifu-single-strike",
+        "urshifu-rapid-strike"
+    ]
+}

@@ -3,7 +3,7 @@
 # Downloads Pokédex data from Pokéapi.
 # ===============================================
 
-import urllib.request, urllib.error, json, os
+import urllib.request, urllib.error, json, yaml, os
 import pokepy as pk
 from typing import List
 
@@ -24,16 +24,12 @@ def scrape_dex(init: int = 1) -> None:
                 json.dump(data, open(f"pokedex/{data['name']}.json", 'w'),
                             indent=4, sort_keys=True)
         
-        except Exception as e:
-            if e == urllib.error.HTTPError:
-                print(i)
-                continue
+        except urllib.error.HTTPError:
+            print(i)
+            continue
             
-            elif e == urllib.error.URLError:
-                continue
-            
-            else:
-                raise
+        except urllib.error.URLError:
+            continue
         
         i += 1
 
@@ -49,7 +45,8 @@ def build_index(folder: str = "pokedex", index: str = "index.json") -> None:
             entry = json.load(open(f"{folder}/{filename}", 'r'))
             data[int(entry["id"])] = entry["name"]
     
-    json.dump(data, open(index, 'w'), indent=4, sort_keys=True)
+    with open(index, 'w') as ind_file:
+        json.dump(data, open(ind_file, 'w'), indent=4, sort_keys=True)
 
 
 def todict(obj, classkey=None):
@@ -90,48 +87,70 @@ def pull_pokemon(folder: str = "pokeapi", init: int = 1) -> None:
     """
 
     i = init
+    with open("index.yml", 'r') as ifile:
+        index = yaml.safe_load(ifile)
+    
+    with open("forms.json", 'r') as ffile:
+        forms = json.load(ffile)
+    
     while i <= MAX_POKEMON:
-        try:
-            pok = pk.V2Client().get_pokemon(i)
-            if isinstance(pok, list):
-                pok = pok[0]
-            
-            f = f"{folder}/{pok.name}.json"
-            json.dump(todict(pok), open(f, 'w'), indent=4, sort_keys=True)
+        pok = pk.V2Client().get_pokemon(i)            
+        if pok.name.split('-')[0] in forms:
+            poks = forms[pok.name.split('-')[0]]
+            for p in poks:
+                pok = pk.V2Client().get_pokemon(p)
+                with open(f"{folder}/{pok.name}.json", 'w') as f:
+                    json.dump(todict(pok), f, indent=4, sort_keys=True)
         
-        except Exception as e:
-            raise
+        else:
+            with open(f"{folder}/{pok.name}.json", 'w') as f:
+                json.dump(todict(pok), f, indent=4, sort_keys=True)
             
         i += 1
 
 
-def add_attributes(*attrs, init: int = 1) -> List[str]:
+def add_attributes(init: int = 1, *attrs) -> List[str]:
     """
     Adds attributes from files in pokeapi/ to files in pokedex/.
     """
 
-    index = json.load(open("index.json", 'r'))
-    special = []
+    with open("index.yml", 'r') as ind:
+        index = yaml.safe_load(ind)
+    
+    with open("forms.json", 'r') as ffile:
+        forms = json.load(ffile)
+    
     for i in range(init, MAX_POKEMON + 1):
-        name = index[str(i)]
-        try:
-            dex_entry = json.load(open(f"pokedex/{name}.json", 'r'))
-            api_entry = json.load(open(f"pokeapi/{name}.json", 'r'))
+        name = index[i]
+        with open(f"pokedex/{name}.json", 'r') as f:   
+            dex_entry = json.load(f)
+
+        if name in forms:
+            for attr in attrs:
+                values = {}
+                for form in forms[name]:
+                    with open(f"pokeapi/{form}.json", 'r') as g:
+                        api_entry = json.load(g)
+                    
+                    values[form] = api_entry[attr]
+                
+                dex_entry[attr] = values
+
+        else:
+            with open(f"pokeapi/{name}.json", 'r') as g:
+                api_entry = json.load(g)
 
             for attr in attrs:
                 dex_entry[attr] = api_entry[attr]
-            
-            json.dump(dex_entry, open(f"pokedex/{name}.json", 'w'), 
-                        indent=4, sort_keys=True)
         
-        except FileNotFoundError:
-            special.append(name)
+        with open(f"pokedex/{name}.json", 'w') as f:
+            json.dump(dex_entry, f, indent=4, sort_keys=True)
     
-    return special
+    return attrs
 
 
 if __name__ == "__main__":
     # scrape_dex(894)
     # build_index()
-    # pull_pokemon(init=894)
-    print(add_attributes("abilities", "height", "types", "weight"))
+    # pull_pokemon(init=740)
+    print(add_attributes(1, "abilities", "height", "types", "weight"))

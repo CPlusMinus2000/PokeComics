@@ -17,9 +17,14 @@ LINK = "https://student.cs.uwaterloo.ca/~cqhe/types/%s.png"
 
 
 # some important information
-index = json.load(open("index.json", 'r'))
-types = yaml.safe_load(open("types/types.yml", 'r'))
+with open("index.yml", 'r') as ind:
+    index = yaml.safe_load(ind)
 
+with open("types/types.yml", 'r') as tfile:
+    types = yaml.safe_load(tfile)
+
+with open("forms.json", 'r') as ffile:
+    forms = json.load(ffile)
 
 def special_cases(pokemon: str) -> str:
     """
@@ -59,20 +64,32 @@ class Pokemon:
 
     def __init__(self, pokemon: Union[str, int]) -> None:
         if isinstance(pokemon, int):
-            pokemon = index[str(pokemon)]
+            pokemon = index[pokemon]
         
         self.name = pokemon
-        self.attrs = json.load(open(f"pokedex/{pokemon}.json", 'r'))
+        with open(f"pokedex/{pokemon}.json", 'r') as pok:
+            self.attrs = json.load(pok)
+        
+        self.form = None
+        if pokemon in forms:
+            self.form = random.sample(forms[pokemon], 1)[0]
+            self.height = int(self.attrs["height"][self.form])
+            self.weight = int(self.attrs["weight"][self.form])
+        else:
+            self.height = int(self.attrs["height"])
+            self.weight = int(self.attrs["weight"])
+        
         self.id = int(self.attrs["id"])
         self.capture = int(self.attrs["capture_rate"])
         self.happiness = int(self.attrs["base_happiness"])
         self.colour = self.attrs["color"]["name"]
-        self.height = int(self.attrs["height"])
-        self.weight = int(self.attrs["weight"])
         self.characters = self.attrs.get("characters")
 
         if self.characters is None:
             self.characters = ["N/A"]
+    
+    def __eq__(self, other) -> bool:
+        return self.name == other.name and self.form == other.form
     
     def __repr__(self) -> str:
         return f"{self.id} - {self.name}"
@@ -80,7 +97,7 @@ class Pokemon:
     def __contains__(self, item: str) -> bool:
         return item in self.attrs
 
-    #TODO: Add addition (True if and only if Pokémon are birth compatible)
+    #TODO: Add and (True if and only if Pokémon are birth compatible)
 
     def punctuate(self) -> str:
         """
@@ -101,8 +118,8 @@ class Pokemon:
             return self.name.replace('-', ' ').title()
         elif "nidoran" in self.name:
             return f"Nidoran ({self.name[-1].upper()})"
-        
-        return self.name.title()
+        else:
+            return self.name.title()
         
     def get_sprite(self, use_api: bool = False) -> str:
         """
@@ -127,7 +144,11 @@ class Pokemon:
         """
 
         typ = []
-        for type in self.attrs["types"]:
+        data = self.attrs["types"]
+        if self.form is not None:
+            data = data[self.form]
+        
+        for type in data:
             # typ.append(types[type["type"]["name"]])
             if link:
                 typ.append(LINK % type["type"]["name"])
@@ -145,7 +166,11 @@ class Pokemon:
         """
 
         abilities = []
-        for a in self.attrs["abilities"]:
+        data = self.attrs["abilities"]
+        if self.form is not None:
+            data = data[self.form]
+        
+        for a in data:
             name = a["ability"]["name"].title()
             link = ABILITY % name.replace('-', '_')
             message = f"[{name.replace('-', ' ')}]({link})"

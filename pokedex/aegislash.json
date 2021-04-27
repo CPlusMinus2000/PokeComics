@@ -1,4 +1,26 @@
 {
+    "abilities": {
+        "aegislash-blade": [
+            {
+                "ability": {
+                    "name": "stance-change",
+                    "url": "https://pokeapi.co/api/v2/ability/176/"
+                },
+                "is_hidden": false,
+                "slot": 1
+            }
+        ],
+        "aegislash-shield": [
+            {
+                "ability": {
+                    "name": "stance-change",
+                    "url": "https://pokeapi.co/api/v2/ability/176/"
+                },
+                "is_hidden": false,
+                "slot": 1
+            }
+        ]
+    },
     "base_happiness": 70,
     "capture_rate": 45,
     "color": {
@@ -906,6 +928,10 @@
     "habitat": null,
     "has_gender_differences": false,
     "hatch_counter": 20,
+    "height": {
+        "aegislash-blade": 17,
+        "aegislash-shield": 17
+    },
     "id": 681,
     "is_baby": false,
     "is_legendary": false,
@@ -1012,6 +1038,40 @@
         "name": "blob",
         "url": "https://pokeapi.co/api/v2/pokemon-shape/5/"
     },
+    "types": {
+        "aegislash-blade": [
+            {
+                "slot": 1,
+                "type": {
+                    "name": "steel",
+                    "url": "https://pokeapi.co/api/v2/type/9/"
+                }
+            },
+            {
+                "slot": 2,
+                "type": {
+                    "name": "ghost",
+                    "url": "https://pokeapi.co/api/v2/type/8/"
+                }
+            }
+        ],
+        "aegislash-shield": [
+            {
+                "slot": 1,
+                "type": {
+                    "name": "steel",
+                    "url": "https://pokeapi.co/api/v2/type/9/"
+                }
+            },
+            {
+                "slot": 2,
+                "type": {
+                    "name": "ghost",
+                    "url": "https://pokeapi.co/api/v2/type/8/"
+                }
+            }
+        ]
+    },
     "varieties": [
         {
             "is_default": true,
@@ -1027,5 +1087,9 @@
                 "url": "https://pokeapi.co/api/v2/pokemon/10026/"
             }
         }
-    ]
+    ],
+    "weight": {
+        "aegislash-blade": 530,
+        "aegislash-shield": 530
+    }
 }

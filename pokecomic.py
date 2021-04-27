@@ -5,10 +5,12 @@ import random
 import json
 from discord.ext import commands
 from dotenv import load_dotenv
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
+from dateutil import parser
 from glob import glob
 from update import NUM_DIGITS as ND
 from pokeapi import Pokemon, special_cases
+from dexload import MAX_POKEMON
 
 from modules.database import get_metadata, update_members
 from modules.misc import bounds, insensitive_glob, leading_num
@@ -20,9 +22,6 @@ from modules.dialogue import dialogue
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD = os.getenv("DISCORD_GUILD")
-
-# Total number of Pokémon that have been discovered
-MAX_POKEMON = 898
 
 # Apparently Discord now requires bots to have priveleged intentions
 intents = discord.Intents.all()
@@ -46,6 +45,8 @@ COLOURS = {
     "yellow": discord.Color.gold()
 }
 
+DAILY_WAIT = timedelta(minutes = 30, hours = 23)
+
 
 # Some setup printouts, plus extra info in case I need to scrape something
 @bot.event
@@ -57,10 +58,15 @@ async def on_ready():
     )
 
     if False: # This exists so I can regenerate the members list
-        members = {}
+        members = get_metadata("members")
         for g in bot.guilds:
             for m in g.members:
-                members[str(m.id)] = m.name
+                members[str(m.id)] = {
+                    "name": m.name,
+                    "daily": datetime.min.isoformat(),
+                    "streak": 0,
+                    "points": 100
+                }
         
         update_members(members)
     
@@ -82,7 +88,7 @@ async def on_message(message):
     elif listen and people[message.author.id] in authorized and 'n' in cont:
         await message.channel.send("Understood.")
     
-    elif message.channel in channels and cont == "good bot":
+    elif cont == "good bot":
         await message.reply(content="Thanks! I try my best.")
     
     listen = False
@@ -123,8 +129,6 @@ async def on_command_error(ctx, error):
 @bot.command(name="comic", help=dialogue["comic_help"])
 async def comic(ctx, content: str):
     global listen
-    if ctx.message.channel.name not in channels:
-        return
 
     # await message.channel.send("Hi!")
     content = content.strip()
@@ -166,13 +170,10 @@ async def comic(ctx, content: str):
         elif len(comics) >= 1 and content.endswith('t'):
             tiff = next(c for c in comics if c.endswith("tif"))
             await ctx.send(file=discord.File(tiff))
-        
         elif len(comics) >= 1 and content.endswith('u'):
             await send_comic(ctx, cnum, False)
-
         elif len(comics) >= 1:
             await send_comic(ctx, cnum)
-
         else:
             await ctx.send(dialogue["comic_unavailable"])
     
@@ -199,14 +200,11 @@ async def comic(ctx, content: str):
         await send_comic(ctx, number)
     
     else:
-        await ctx.send(dialogue["comic_unrecognized"])
+        await ctx.send(dialogue["comic_unrecognized"] % content)
 
 
 @bot.command(name="latest", help=dialogue["latest_help"])
 async def latest(ctx):
-    if ctx.channel.name not in channels:
-        return
-
     lv = get_metadata("lviewed")
     lat = get_metadata("latest")
     update = get_date("updated")
@@ -230,27 +228,18 @@ async def latest(ctx):
 
 @bot.command(name="status", help=dialogue["status_help"])
 async def status(ctx):
-    if ctx.message.channel.name not in channels:
-        return
-
     latest, lview = get_metadata("latest"), get_metadata("lviewed")
     await ctx.send(dialogue["status_msg"] % (lview, latest))
 
 
 @bot.command(name="statsu", help=dialogue["statsu_help"])
 async def statsu(ctx):
-    if ctx.message.channel.name not in channels:
-        return
-
     latest, lview = get_metadata("latest"), get_metadata("lviewed")
     await ctx.send(dialogue["statsu_msg"] % (lview, latest))
 
 
 @bot.command(name="search", help=dialogue["search_help"])
 async def search(ctx, *keywords):
-    if not ctx.message.channel.name in channels:
-        return
-    
     lview = get_metadata("lviewed")
     qtext = ' '.join(keywords)
     result = insensitive_glob(f"Comics/*{qtext}*.tif")
@@ -266,17 +255,11 @@ async def search(ctx, *keywords):
 
 @bot.command(name="rules", help=dialogue["rules_help"])
 async def rules(ctx):
-    if ctx.message.channel.name not in channels:
-        return
-
     await ctx.send(dialogue["rules_msg"])
 
 
 @bot.command(name="okedex", help=dialogue["dex_help"])
 async def pic(ctx, *args):
-    if ctx.message.channel.name not in channels:
-        return
-    
     pokemon = ' '.join(args)
     with open("index.json", 'r') as ind:
         index = json.load(ind)
@@ -328,6 +311,33 @@ async def pic(ctx, *args):
     
     entry.set_footer(text=info.get_flavour())
     await ctx.send(embed=entry)
+
+
+@bot.command(name="daily", help=dialogue["daily_help"])
+async def daily(ctx):
+    last_checked = parser.isoparse(people[ctx.author.id]["daily"])
+    if datetime.today() - last_checked >= DAILY_WAIT:
+        people[ctx.author.id]["daily"] = datetime.today().isoformat()
+        people[ctx.author.id]["points"] += 50
+        if (datetime.today() - last_checked).days <= 1:
+            people[ctx.author.id]["streak"] += 1
+        else:
+            people[ctx.author.id]["streak"] = 0
+
+        await ctx.send(dialogue["daily_success"])
+        update_members(people)
+    
+    else:
+        wt = DAILY_WAIT - (datetime.today() - last_checked)
+        wat = (wt.seconds // 3600, (wt.seconds % 3600) // 60, wt.seconds % 60)
+        await ctx.send(dialogue["daily_fail"] % wat)
+
+
+@bot.command(name="balance", help=dialogue["balance_help"])
+async def balance(ctx):
+    mention = f"<@{ctx.author.id}>"
+    points = people[ctx.author.id]["points"]
+    await ctx.send(dialogue["balance_msg"] % (mention, points))
 
 
 @bot.command(name="slots", help="Plays some slots!")

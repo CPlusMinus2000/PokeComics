@@ -23,7 +23,9 @@ comic_hiding_else: >
     but it's not available yet. 
     Go bug Claudine if you want to read it.
 
-comic_unrecognized: I don't recognize that command -- could you try $phelp?
+comic_unrecognized: >
+    Nani?? I do not know the meaning of this '%s' :( 
+    You gotta look at "$phelp comic" like a real pro gamer *dab*
 
 # Latest command dialogue (there is some overlap with comic)
 latest_help: Gets the latest comic.
@@ -31,7 +33,7 @@ latest_help: Gets the latest comic.
 # Status command dialogue
 status_help: Gets the current status of comics.
 status_msg: "%d comics have been viewed so far, and #%d is the latest drawn."
-statsu_help: コミックの現在のstatsuを取得します。
+statsu_help: 漫画の現在のstatsuを取得します。
 statsu_msg: "これまでに%d冊の漫画が描かれ、最新の漫画は%d冊です。"
 
 # Search command dialogue
@@ -57,6 +59,14 @@ rules_msg: >
 # Pokédex command dialogue
 dex_help: Gets a Pokédex entry of the Pokémon given.
 dex_fail: Hm... I've never met a Pokémon with that number.
+
+# Daily
+daily_help: Gets a daily reward!
+daily_success: A new day, a new reward. You've earned 50 Pokédollars!.
+daily_fail: "Too soon. Please wait %d hour(s), %d minute(s) and %d second(s)."
+
+balance_help: Gets your points balance. How much have you made?
+balance_msg: "%s, you have accrued %d Pokédollars."
 
 # General dialogue
 construction: Under construction. Please check back later.

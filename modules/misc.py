@@ -11,7 +11,7 @@ def bounds() -> Tuple[time, time]:
 
     stime = time(8, 0, 0)
     day = date.today().weekday()
-    etime = time(10, 35, 10, 10010) if day < 5 else time(11, 20, 20, 20020)
+    etime = time(10, 35, 10, 10010) if day < 5 else time(11, 10, 10, 10010)
     
     return stime, etime
 
