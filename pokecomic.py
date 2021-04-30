@@ -148,11 +148,11 @@ async def comic(ctx, content: str):
             await ctx.send(dialogue["comic_high"])
         
         elif len(comics) >= 1 and cnum == lv + 1:
-            if people[ctx.author.id] in authorized:
+            if people[ctx.author.id]["name"] in authorized:
                 listen = True
                 await ctx.send(dialogue["comic_sure"])
             
-            elif people[ctx.author.id] in readers:
+            elif people[ctx.author.id]["name"] in readers:
                 if stime <= present <= etime and update != date.today():
                     db_update(cnum)
                     await ctx.send(dialogue["comic_wake"])
@@ -179,7 +179,7 @@ async def comic(ctx, content: str):
     
     # Command for fetching the latest comic
     elif "latest" in content:
-        if (people[ctx.author.id] in readers and lv < lat and
+        if (people[ctx.author.id]["name"] in readers and lv < lat and
             stime <= present <= etime and update != date.today()):
         
                 db_update(lv + 1)
@@ -210,8 +210,8 @@ async def latest(ctx):
     update = get_date("updated")
     stime, etime = bounds()
 
-    if (people[ctx.author.id] in readers and update != date.today() and
-        stime <= datetime.now().time() <= etime and lv < lat):
+    if (people[ctx.author.id]["name"] in readers and lv < lat and
+        stime <= datetime.now().time() <= etime and update != date.today()):
             
         db_update(lv + 1)
         await ctx.send(dialogue["comic_wake"])
@@ -219,7 +219,7 @@ async def latest(ctx):
 
     else:
         await send_comic(ctx, lv)
-        if lat > lv and people[ctx.author.id] in readers:
+        if lat > lv and people[ctx.author.id]["name"] in readers:
             await ctx.send(dialogue["comic_hiding"])
 
         elif lat > lv:
@@ -279,6 +279,9 @@ async def pic(ctx, *args):
     pok = info.punctuate()
     poku = pok.replace(' ', '_')
     title = f"#{info.id} {pok}"
+    if info.form is not None:
+        title += f" - {' '.join(info.form.split('-')[1:]).title()}"
+    
     url = f"https://bulbapedia.bulbagarden.net/wiki/{poku}_(Pok%C3%A9mon)"
     entry = discord.Embed(
         title=title, url=url, 

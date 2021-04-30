@@ -10,3 +10,6 @@ pokeapi/*.json
 *.log
 __pycache__
 node_modules
+sprites
+.vscode
+words/*.txt

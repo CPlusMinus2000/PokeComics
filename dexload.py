@@ -1,6 +1,6 @@
 
 # ===============================================
-# Downloads Pokédex data from Pokéapi.
+# Downloads Pokédex data from PokéApi.
 # ===============================================
 
 import urllib.request, urllib.error, json, yaml, os
@@ -51,7 +51,7 @@ def build_index(folder: str = "pokedex", index: str = "index.json") -> None:
 
 def todict(obj, classkey=None):
     """
-    Recursively convert an object (i.e. a Pokepy Pokemon) into a dictionary.
+    Recursively convert an object (i.e. a Poképy Pokémon) into a dictionary.
     """
 
     if isinstance(obj, dict):

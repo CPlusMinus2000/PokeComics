@@ -150,7 +150,7 @@ async def process_reaction(reaction, user) -> None:
             await edit_comic(reaction.message, cnum + 1)
         
         elif (reaction.emoji == RIGHT and cnum == lviewed and
-                people[user.id] in readers and lviewed < latest and
+                people[user.id]["name"] in readers and lviewed < latest and
                 stime <= datetime.now().time() <= etime and
                 date.today() != update):
             

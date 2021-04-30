@@ -9,9 +9,7 @@ import pokepy as pk
 import json, yaml, random
 from typing import Union, List
 
-ART = ("https://raw.githubusercontent.com/PokeAPI/sprites/"
-        "master/sprites/pokemon/other/official-artwork/")
-
+ART = "https://student.cs.uwaterloo.ca/~cqhe/Artwork/official-artwork/%s"
 ABILITY = "https://bulbapedia.bulbagarden.net/wiki/%s_(Ability)"
 LINK = "https://student.cs.uwaterloo.ca/~cqhe/types/%s.png"
 
@@ -132,10 +130,12 @@ class Pokemon:
             if type(info) == list:
                 info = info[0]
             
-            return ART + f"{info.id}.png"
+            return ART % f"{info.name}.png"
         
+        elif self.form is not None:
+            return ART % f"{self.form}.png"
         else: # Use locally stored files to access IDs          
-            return ART + f"{self.id}.png"
+            return ART % f"{self.name}.png"
 
 
     def get_types(self, link: bool = False) -> List[str]:
