@@ -333,8 +333,9 @@ async def daily(ctx):
         update_members(people)
     
     else:
-        wt = DAILY_WAIT - (datetime.today() - last_checked)
-        wat = (wt.seconds // 3600, (wt.seconds % 3600) // 60, wt.seconds % 60)
+        wt = (DAILY_WAIT - (datetime.today() - last_checked)).seconds
+        h, m, s = wt // 3600, (wt % 3600 // 60), wt % 60
+        wat = (h, 's' * (h != 1), m, 's' * (m != 1), s, 's' * (s != 1))
         await ctx.send(dialogue["daily_fail"] % wat)
 
 
@@ -390,6 +391,7 @@ async def word(ctx, spec: str, content: str, *options):
             await ctx.send(dialogue["words_no_options"])
         elif "new" in options[0] and people[ctx.author.id]["points"] < 100:
             await ctx.send(dialogue["words_poor"])
+            return
         elif "new" in options[0]:
             unseen = [n for n in range(len(seen)) if not seen[n]]
             if not unseen:
@@ -426,9 +428,13 @@ async def purview(ctx, spec: str):
         await ctx.send(dialogue["words_fail"])
         return
 
-    facts = people[ctx.author.id]["facts"][spec]
-    facts.sort()
-    await ctx.send(f"You have viewed {spec} facts {', '.join(facts)}.")
+    seen = people[ctx.author.id]["facts"][spec]
+    facts = [str(n + 1) for n in range(len(seen)) if seen[n]]
+    if facts:
+        s = 's' if len(facts) > 1 else ''
+        await ctx.send(f"You have viewed {spec} fact{s} {', '.join(facts)}.")
+    else:
+        await ctx.send(f"You haven't viewed any {spec} facts yet.")
 
 
 @bot.command(name="slots", help="Plays some slots!")

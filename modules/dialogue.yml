@@ -63,7 +63,7 @@ dex_fail: Hm... I've never met a Pokémon with that number.
 # Daily
 daily_help: Gets a daily reward!
 daily_success: A new day, a new reward. You've earned 50 Pokédollars!.
-daily_fail: "Too soon. Please wait %d hour(s), %d minute(s) and %d second(s)."
+daily_fail: "Too soon. Please wait %d hour%s, %d minute%s and %d second%s."
 
 balance_help: Gets your points balance. How much have you made?
 balance_msg: "%s, you have accrued %d Pokédollars."
