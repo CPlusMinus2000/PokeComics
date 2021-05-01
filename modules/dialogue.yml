@@ -68,5 +68,25 @@ daily_fail: "Too soon. Please wait %d hour(s), %d minute(s) and %d second(s)."
 balance_help: Gets your points balance. How much have you made?
 balance_msg: "%s, you have accrued %d Pokédollars."
 
+# Spending
+words_help: |
+    Buys a fact using 100 of your hard-earned Pokédollars.
+    You can choose between "lore", "references", and "details" for spec.
+    Content represents the specific choice of fact, they're all numbered.
+words_fail: That topic doesn't exist. Try $pwords [lore|references|details].
+words_poor: You don't have enough Pokédollars for that!
+words_oob: >
+    That fact number is out of bounds. Currently, you can access %s facts
+    1 through %d.
+words_no_options: >
+    Please specify if you would like to choose randomly among the facts
+    you have already seen, or among the facts you have not seen, by appending
+    the word "new" or "old" to the end of the command. If you select a new
+    fact, you will be charged accordingly.
+words_seen_all: You've already seen all the facts in that category!
+words_unrecognized_content: >
+    I don't recognize the content specifier. Please give either a number
+    or the letters "rand" if you want a random fact.
+
 # General dialogue
 construction: Under construction. Please check back later.

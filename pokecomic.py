@@ -17,6 +17,7 @@ from modules.misc import bounds, insensitive_glob, leading_num
 from modules.comic import *
 from modules.silly import *
 from modules.dialogue import dialogue
+from words.words import words
 
 # Some Discord authentication information
 load_dotenv()
@@ -82,10 +83,11 @@ async def on_message(message):
         await message.channel.send("Hi! What can I do for you?")
     
     cont = message.content.lower()
-    if listen and people[message.author.id] in authorized and 'y' in cont:
+    user = message.author.id
+    if listen and people[user]["name"] in authorized and 'y' in cont:
         await send_comic(message.channel, get_metadata("lviewed"))
     
-    elif listen and people[message.author.id] in authorized and 'n' in cont:
+    elif listen and people[user]["name"] in authorized and 'n' in cont:
         await message.channel.send("Understood.")
     
     elif cont == "good bot":
@@ -341,6 +343,92 @@ async def balance(ctx):
     mention = f"<@{ctx.author.id}>"
     points = people[ctx.author.id]["points"]
     await ctx.send(dialogue["balance_msg"] % (mention, points))
+
+
+@bot.command(name="words", help=dialogue["words_help"])
+async def word(ctx, spec: str, content: str, *options):
+    """
+    Processes a fact purchase, for some extra comic details.
+
+    Parameters
+    ----------
+    spec : str
+        The category of the fact requested.
+    
+    content : str
+        The number of the fact requested, or a specifying command (i.e. rand).
+    
+    options : Iterable[str]
+        Some helpful options for certain commands, i.e., whether or not
+        a new or old command is wanted for random generation.
+    """
+
+    if spec not in words:
+        await ctx.send(dialogue["words_fail"])
+        return
+
+    seen = people[ctx.author.id]["facts"][spec]
+    if content.isdigit():
+        num = int(content)
+        if num <= 0 or num > len(words[spec]):
+            await ctx.send(dialogue["words_oob"] % (content, len(words[spec])))
+        else:
+            if len(seen) < len(words[spec]):
+                seen += [False] * (len(words[spec]) - len(seen))
+
+            if not seen[num - 1] and people[ctx.author.id]["points"] < 100:
+                await ctx.send(dialogue["words_poor"])
+                return
+            elif not seen[num - 1]:
+                people[ctx.author.id]["points"] -= 100
+                seen[num - 1] = True
+
+            await ctx.send(words[spec][num - 1])
+    
+    elif "rand" in content:
+        if not options:
+            await ctx.send(dialogue["words_no_options"])
+        elif "new" in options[0] and people[ctx.author.id]["points"] < 100:
+            await ctx.send(dialogue["words_poor"])
+        elif "new" in options[0]:
+            unseen = [n for n in range(len(seen)) if not seen[n]]
+            if not unseen:
+                await ctx.send(dialogue["words_seen_all"])
+            else:
+                num = random.sample(unseen, 1)[0]
+                people[ctx.author.id]["points"] -= 100
+                seen[num - 1] = True
+                await ctx.send(words[spec][num])
+        elif "old" in options[0]:
+            haveseen = [n for n in range(len(seen)) if seen[n]]
+            if not haveseen:
+                await ctx.send(dialogue["words_seen_all"])
+            else:
+                num = random.sample(haveseen, 1)[0]
+                await ctx.send(words[spec][num])
+        
+        else:
+            await ctx.send(dialogue["words_no_options"])
+    
+    else:
+        await ctx.send(dialogue["words_unrecognized_content"])
+    
+    update_members(people)
+
+
+@bot.command(name="urview", help="Checks which facts you have received.")
+async def purview(ctx, spec: str):
+    """
+    Displays which facts have already been asked for.
+    """
+
+    if spec not in words:
+        await ctx.send(dialogue["words_fail"])
+        return
+
+    facts = people[ctx.author.id]["facts"][spec]
+    facts.sort()
+    await ctx.send(f"You have viewed {spec} facts {', '.join(facts)}.")
 
 
 @bot.command(name="slots", help="Plays some slots!")

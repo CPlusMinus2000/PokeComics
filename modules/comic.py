@@ -28,7 +28,7 @@ DISPLAY = (".png", ".PNG", ".jpg", ".jpeg", ".JPG", ".JPEG")
 
 # This is a dictionary of people in the server
 people = get_metadata("members")
-people = {int(p): people[p] for p in people}
+people = {int(key): value for key, value in people.items()}
 
 # List of authorized people
 authorized = ["The20thIcosahedron"]
