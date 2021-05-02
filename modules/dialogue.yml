@@ -88,5 +88,8 @@ words_unrecognized_content: >
     I don't recognize the content specifier. Please give either a number
     or the letters "rand" if you want a random fact.
 
+pv_pos: You have viewed %s fact%s %s of %d.
+pv_zero: You haven't viewed any %s facts yet.
+
 # General dialogue
 construction: Under construction. Please check back later.

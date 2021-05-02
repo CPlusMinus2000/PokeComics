@@ -121,6 +121,16 @@ async def on_command_error(ctx, error):
         await ctx.send(f"{str(error)}. Maybe try $phelp?")
         return
     
+    elif isinstance(error, commands.errors.MissingRequiredArgument):
+        parts = ctx.message.content.split(' ')
+        if parts[0] == "$p":
+            command = parts[1]
+        else:
+            command = parts[0][2:]
+        
+        await ctx.send(f"{error}. Try using $phelp {command}?")
+        return
+    
     elif any(isinstance(error, e) for e in errors):
         await ctx.send(str(error))
         return
@@ -418,8 +428,8 @@ async def word(ctx, spec: str, content: str, *options):
     update_members(people)
 
 
-@bot.command(name="urview", help="Checks which facts you have received.")
-async def purview(ctx, spec: str):
+@bot.command(name="erview", help="Checks which facts you have received.")
+async def perview(ctx, spec: str):
     """
     Displays which facts have already been asked for.
     """
@@ -429,12 +439,13 @@ async def purview(ctx, spec: str):
         return
 
     seen = people[ctx.author.id]["facts"][spec]
-    facts = [str(n + 1) for n in range(len(seen)) if seen[n]]
-    if facts:
-        s = 's' if len(facts) > 1 else ''
-        await ctx.send(f"You have viewed {spec} fact{s} {', '.join(facts)}.")
+    fs = [str(n + 1) for n in range(len(seen)) if seen[n]]
+    if fs:
+        s = 's' if len(fs) > 1 else ''
+        info = f"{', '.join(fs[:-1])}, and {fs[-1]}" if len(fs) > 1 else fs[0]
+        await ctx.send(dialogue["pv_pos"] % (spec, s, info, len(words[spec])))
     else:
-        await ctx.send(f"You haven't viewed any {spec} facts yet.")
+        await ctx.send(dialogue["pv_zero"] % spec)
 
 
 @bot.command(name="slots", help="Plays some slots!")
