@@ -6,12 +6,18 @@ from glob import glob
 
 # Start and ending times (so morning comics can only be seen from 6:00-7:30)
 #  but converted to E[SD]T because that's where I'm hosting the bot from
-def bounds() -> Tuple[time, time]:
-    """Get the left/right bounds of when comics are available."""
+def bounds(day: int = date.today().weekday()) -> Tuple[time, time]:
+    """Get the left/right bounds of when comics are available.
+    
+    Parameters
+    ----------
+    day : int
+        A number (0-6) representing a day of the week.
+        By default, it is the current day.
+    """
 
     stime = time(8, 0, 0)
-    day = date.today().weekday()
-    etime = time(15, 10, 10, 10010) if day < 5 else time(11, 10, 10, 10010)
+    etime = time(11, 10, 10, 10010) if day < 5 else time(11, 10, 10, 10010)
     
     return stime, etime
 

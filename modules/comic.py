@@ -81,7 +81,7 @@ async def send_comic(ctx, comic: Union[str, int], colour: bool = True):
     if isinstance(comic, int):
         comic = fetch_comic(comic, colour)
 
-    name = f"{str(Path.home())}/public_html/{os.path.splitext(comic)[0]}.png"
+    name = f"{Path.home()}/public_html/{os.path.splitext(comic)[0]}.png"
     if not os.path.exists(name):
         os.system(f'convert "{comic}" "{name}" > /dev/null')
         os.system(f"chmod a+rx '{name}'")

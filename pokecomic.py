@@ -6,8 +6,8 @@ import json
 from discord.ext import commands
 from dotenv import load_dotenv
 from datetime import datetime, date, timedelta
-from dateutil import parser
 from glob import glob
+
 from update import NUM_DIGITS as ND
 from pokeapi import Pokemon, special_cases
 from dexload import MAX_POKEMON
@@ -46,8 +46,7 @@ COLOURS = {
     "yellow": discord.Color.gold()
 }
 
-DAILY_WAIT = timedelta(minutes = 30, hours = 23)
-
+DAILY_WAIT = timedelta(hours = 23)
 
 # Some setup printouts, plus extra info in case I need to scrape something
 @bot.event
@@ -265,9 +264,13 @@ async def search(ctx, *keywords):
         await send_comic(ctx, comics[0])
 
 
+TIME_CONVERT = 3
 @bot.command(name="rules", help=dialogue["rules_help"])
 async def rules(ctx):
-    await ctx.send(dialogue["rules_msg"])
+    wkt, wet = bounds(0)[1], bounds(5)[1]
+    wkform = f"{wkt.hour - TIME_CONVERT}:{wkt.minute}"
+    weform =  f"{wet.hour - TIME_CONVERT}:{wet.minute}"
+    await ctx.send(dialogue["rules_msg"] % (wkform, weform))
 
 
 @bot.command(name="okedex", help=dialogue["dex_help"])
@@ -330,7 +333,7 @@ async def pic(ctx, *args):
 
 @bot.command(name="daily", help=dialogue["daily_help"])
 async def daily(ctx):
-    last_checked = parser.isoparse(people[ctx.author.id]["daily"])
+    last_checked = datetime.fromisoformat(people[ctx.author.id]["daily"])
     if datetime.today() - last_checked >= DAILY_WAIT:
         people[ctx.author.id]["daily"] = datetime.today().isoformat()
         people[ctx.author.id]["points"] += 50
@@ -429,23 +432,33 @@ async def word(ctx, spec: str, content: str, *options):
 
 
 @bot.command(name="erview", help="Checks which facts you have received.")
-async def perview(ctx, spec: str):
+async def perview(ctx, *specs):
     """
     Displays which facts have already been asked for.
     """
 
-    if spec not in words:
-        await ctx.send(dialogue["words_fail"])
-        return
-
-    seen = people[ctx.author.id]["facts"][spec]
-    fs = [str(n + 1) for n in range(len(seen)) if seen[n]]
-    if fs:
-        s = 's' if len(fs) > 1 else ''
-        info = f"{', '.join(fs[:-1])}, and {fs[-1]}" if len(fs) > 1 else fs[0]
-        await ctx.send(dialogue["pv_pos"] % (spec, s, info, len(words[spec])))
+    if not specs:
+        specs = ("details", "lore", "references")
     else:
-        await ctx.send(dialogue["pv_zero"] % spec)
+        for spec in specs:
+            if spec not in words:
+                await ctx.send(dialogue["words_fail"] % spec)
+
+    viewed = discord.Embed(title="Viewed", color=COLOURS["gray"])
+    for sp in specs:
+        seen = people[ctx.author.id]["facts"][sp]
+        fs = [str(n + 1) for n in range(len(seen)) if seen[n]]
+        if fs:
+            s = 's' if len(fs) > 1 else ''
+            nums = ', '.join(fs[:-1])
+            comma = ',' if len(fs) > 2 else ''
+            info = f"{nums}{comma} and {fs[-1]}" if len(fs) > 1 else fs[0]
+            viewed.add_field(name=sp.title(), 
+                value=dialogue["pv_pos"] % (sp, s, info, len(words[sp])))
+        else:
+            viewed.add_field(name=sp.title(), value=dialogue["pv_zero"] % sp)
+    
+    await ctx.send(embed=viewed)
 
 
 @bot.command(name="slots", help="Plays some slots!")

@@ -49,7 +49,7 @@ rules_msg: >
     Because of this, Colin decided to incentivize Claudine 
     by letting her see a new strip of his not-a-fanfiction 
     Pokémon comic when he draws them, but ONLY if she gets up 
-    early enough in the morning (specifically 5:00-7:35 PST).
+    early enough in the morning (specifically 5:00-%s PST, %s on weekends).
 
     
     Because of this, the next comic might not be available yet, 
@@ -73,7 +73,8 @@ words_help: |
     Buys a fact using 100 of your hard-earned Pokédollars.
     You can choose between "lore", "references", and "details" for spec.
     Content represents the specific choice of fact, they're all numbered.
-words_fail: That topic doesn't exist. Try $pwords [lore|references|details].
+words_fail: >
+    The topic '%s' doesn't exist. Try $pwords [lore|references|details]?
 words_poor: You don't have enough Pokédollars for that!
 words_oob: >
     That fact number is out of bounds. Currently, you can access %s facts

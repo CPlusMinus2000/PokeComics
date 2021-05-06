@@ -2,5 +2,6 @@ discord
 python-dotenv
 pymongo
 dnspython
-pokebase
 lorem
+pokepy
+pyyaml
