@@ -57,6 +57,8 @@ async def on_ready():
         f'{guild.name}(id: {guild.id})'
     )
 
+    await bot.change_presence(activity=discord.Game(name="Voltorb Flip"))
+
     if False: # This exists so I can regenerate the members list
         members = get_metadata("members")
         for g in bot.guilds:
@@ -110,11 +112,11 @@ async def on_reaction_add(reaction, user):
 
 @bot.event
 async def on_command_error(ctx, error):
-    errors = [
+    errors = (
         commands.errors.CommandInvokeError,
         commands.errors.UnexpectedQuoteError,
         commands.errors.InvalidEndOfQuotedStringError
-    ]
+    )
     
     if isinstance(error, commands.errors.CommandNotFound):
         await ctx.send(f"{str(error)}. Maybe try $phelp?")
@@ -127,10 +129,10 @@ async def on_command_error(ctx, error):
         else:
             command = parts[0][2:]
         
-        await ctx.send(f"{error}. Try using $phelp {command}?")
+        await ctx.send(f"{error} Try using $phelp {command}?")
         return
     
-    elif any(isinstance(error, e) for e in errors):
+    elif isinstance(error, errors):
         await ctx.send(str(error))
         return
     
@@ -207,8 +209,7 @@ async def comic(ctx, content: str):
                 await ctx.send(dialogue["comic_hiding_else"])
     
     elif "rand" in content:
-        number = random.randint(1, lv)
-        await send_comic(ctx, number)
+        await send_comic(ctx, random.randint(1, lv))
     
     else:
         await ctx.send(dialogue["comic_unrecognized"] % content)
