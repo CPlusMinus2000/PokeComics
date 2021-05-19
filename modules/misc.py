@@ -45,3 +45,4 @@ def leading_num(s: str, stop: int = -1) -> int:
         i += 1
     
     return int(s[:(i - 1)])
+

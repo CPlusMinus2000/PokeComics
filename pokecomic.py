@@ -13,10 +13,11 @@ from pokeapi import Pokemon, special_cases
 from dexload import MAX_POKEMON
 
 from modules.database import get_metadata, update_members
-from modules.misc import bounds, insensitive_glob, leading_num
+from modules.misc import *
 from modules.comic import *
 from modules.silly import *
 from modules.dialogue import dialogue
+from modules.emojis import emojis
 from words.words import words
 
 # Some Discord authentication information
@@ -107,7 +108,12 @@ async def on_reaction_add(reaction, user):
         # Ignore other people's messages, and own reactions
         return
     
-    await process_reaction(reaction, user)
+    embeds = reaction.message.embeds
+    if SITE in reaction.message.content:
+        await process_reaction_comic(reaction, user)
+    
+    elif embeds and embeds[0].title.startswith("Poll:"):
+        pass # Maybe one day I'll do something with this
     
 
 @bot.event
@@ -313,20 +319,14 @@ async def pic(ctx, *args):
     typeinfo = '\n'.join(typemojis)
     # typeinfo = '\n'.join(info.get_types(True))
     entry.set_thumbnail(url=info.get_sprite())
-    entry.add_field(name="Type(s)", value=typeinfo, inline=True)
-    entry.add_field(name="Abilities", value='\n'.join(
-        info.get_abilities()), inline=True)
+    entry.add_field(name="Type(s)", value=typeinfo)
+    entry.add_field(name="Abilities", value='\n'.join(info.get_abilities()))
     
     cr = "https://bulbapedia.bulbagarden.net/wiki/Catch_rate"
-    entry.add_field(name="Catch Rate", value=f"[{info.capture}]({cr})", 
-        inline=True)
-    
-    entry.add_field(name="Height/Weight", value=info.get_size(), inline=True)
-    entry.add_field(name="Characters", value=','.join(info.characters),
-        inline=True)
-    
-    entry.add_field(name="Gender Ratio", value=info.format_gender(),
-        inline=True)
+    entry.add_field(name="Catch Rate", value=f"[{info.capture}]({cr})")
+    entry.add_field(name="Height/Weight", value=info.get_size())
+    entry.add_field(name="Characters", value=','.join(info.characters))
+    entry.add_field(name="Gender Ratio", value=info.format_gender())
     
     entry.set_footer(text=info.get_flavour())
     await ctx.send(embed=entry)
@@ -479,6 +479,44 @@ async def piaz(ctx):
 @bot.command(name="ipsum", help="Gets a bit of lorem ipsum text.")
 async def ips(ctx, options: str = "s"):
     await ipsum(ctx, options)
+
+@bot.command(name="oll", help="Organizes a poll.")
+async def oll(ctx, *info):
+    """
+    Makes a poll with a given question and some answers.
+    """
+
+    qwords = []
+    answers = []
+    marked = False
+    curr = []
+    for word in info:
+        if marked and word == '|':
+            answers.append(' '.join(curr))
+            curr = []
+        elif marked:
+            curr.append(word)
+        else:
+            marked = True if '?' in word else False
+            qwords.append(word)
+    
+    if curr:
+        answers.append(' '.join(curr))
+
+    if not answers:
+        answers = ["Yes", "No"]
+    
+    title = f"Poll: {' '.join(qwords)}"
+    poll = discord.Embed(title=title, color=COLOURS["black"])
+    for i, answer in enumerate(answers):
+        poll.add_field(
+            name=chr(i + ord('A')), value=f"```{answer}```", inline=False
+        )
+
+    sent = await ctx.send(embed=poll)
+    for i in range(len(answers)):
+        await sent.add_reaction(emojis[chr(i + ord('A'))])
+
 
 @bot.command(name="ython", help="Does Python evaluation.")
 async def ython(ctx, *args):

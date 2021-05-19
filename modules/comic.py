@@ -121,7 +121,7 @@ async def edit_comic(msg: discord.Message, comic: Union[str, int]):
     await msg.edit(content=fname)
 
 
-async def process_reaction(reaction, user) -> None:
+async def process_reaction_comic(reaction, user) -> None:
     """
     Processes a comic reaction.
 
@@ -134,7 +134,7 @@ async def process_reaction(reaction, user) -> None:
     """
     
     cont = reaction.message.content
-    if SITE in cont and reaction.emoji in [LEFT, RIGHT]: 
+    if reaction.emoji in [LEFT, RIGHT]: 
         # Comic message
         comic = cont.split('/')[-1]
         cnum = int(comic[:ND])
@@ -161,5 +161,5 @@ async def process_reaction(reaction, user) -> None:
         await reaction.remove(user)
         await asyncio.sleep(0.5) # So the reactions can't get spammed
     
-    elif SITE in cont and reaction.emoji == DELETE:
+    elif reaction.emoji == DELETE:
         await reaction.message.delete()
