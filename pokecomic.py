@@ -82,7 +82,10 @@ async def on_message(message):
         return
     
     if bot.user.mentioned_in(message) and "everyone" not in message.content:
-        await message.channel.send("Hi! What can I do for you?")
+        if "referral" in message.content or "job" in message.content:
+            await message.channel.send("Sorry, I don't have a job for you.")
+        else:
+            await message.channel.send("Hi! What can I do for you?")
     
     cont = message.content.lower()
     user = message.author.id
@@ -247,7 +250,8 @@ async def latest(ctx):
 @bot.command(name="status", help=dialogue["status_help"])
 async def status(ctx):
     latest, lview = get_metadata("latest"), get_metadata("lviewed")
-    await ctx.send(dialogue["status_msg"] % (lview, latest))
+    update = date.fromisoformat(get_metadata("updated")).strftime("%B %d, %Y")
+    await ctx.send(dialogue["status_msg"] % (lview, latest, update))
 
 
 @bot.command(name="statsu", help=dialogue["statsu_help"])
@@ -379,14 +383,14 @@ async def word(ctx, spec: str, content: str, *options):
     """
 
     if spec not in words:
-        await ctx.send(dialogue["words_fail"])
+        await ctx.send(dialogue["words_fail"] % spec)
         return
 
     seen = people[ctx.author.id]["facts"][spec]
     if content.isdigit():
         num = int(content)
         if num <= 0 or num > len(words[spec]):
-            await ctx.send(dialogue["words_oob"] % (content, len(words[spec])))
+            await ctx.send(dialogue["words_oob"] % (spec, len(words[spec])))
         else:
             if len(seen) < len(words[spec]):
                 seen += [False] * (len(words[spec]) - len(seen))
@@ -516,6 +520,11 @@ async def oll(ctx, *info):
     sent = await ctx.send(embed=poll)
     for i in range(len(answers)):
         await sent.add_reaction(emojis[chr(i + ord('A'))])
+
+
+@bot.command(name="repeat", help="Repeats your words.")
+async def repeat(ctx, *args):
+    await ctx.send(' '.join(args))
 
 
 @bot.command(name="ython", help="Does Python evaluation.")

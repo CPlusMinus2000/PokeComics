@@ -32,7 +32,9 @@ latest_help: Gets the latest comic.
 
 # Status command dialogue
 status_help: Gets the current status of comics.
-status_msg: "%d comics have been viewed so far, and #%d is the latest drawn."
+status_msg: > 
+    %d comics have been viewed so far, and #%d, drawn on %s, is the latest.
+
 statsu_help: 漫画の現在のstatsuを取得します。
 statsu_msg: "これまでに%d冊の漫画が描かれ、最新の漫画は%d冊です。"
 
