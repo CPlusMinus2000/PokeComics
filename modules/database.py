@@ -30,6 +30,16 @@ def get_metadata(field: str) -> int:
     return comicdata.find_one({"name": "viewstats"})[field]
 
 
+def set_metadata(field: str, value) -> None:
+    """
+    Sets the specific metadata value indicated by 'field'.
+    """
+
+    viewstats = comicdata.find_one({"name": "viewstats"})
+    viewstats[field] = value
+    comicdata.replace_one({"name": "viewstats"}, viewstats)
+
+
 def update_members(members: Dict[str, str]) -> None:
     """
     Updates the members list in the database.

@@ -3,6 +3,7 @@ import os
 import discord
 import random
 import json
+import math
 from discord.ext import commands
 from dotenv import load_dotenv
 from datetime import datetime, date, timedelta
@@ -12,7 +13,7 @@ from update import NUM_DIGITS as ND
 from pokeapi import Pokemon, special_cases
 from dexload import MAX_POKEMON
 
-from modules.database import get_metadata, update_members
+from modules.database import get_metadata, update_members, set_metadata
 from modules.misc import *
 from modules.comic import *
 from modules.silly import *
@@ -55,7 +56,8 @@ async def on_ready():
     guild = discord.utils.get(bot.guilds, name=GUILD)
     print(
         f'{bot.user} is connected to the following guild:\n'
-        f'{guild.name}(id: {guild.id})'
+        f'{guild.name}(id: {guild.id})\n'
+        f"My ID is: {bot.user.id}"
     )
 
     await bot.change_presence(activity=discord.Game(name="Voltorb Flip"))
@@ -124,7 +126,8 @@ async def on_command_error(ctx, error):
     errors = (
         commands.errors.CommandInvokeError,
         commands.errors.UnexpectedQuoteError,
-        commands.errors.InvalidEndOfQuotedStringError
+        commands.errors.InvalidEndOfQuotedStringError,
+        commands.errors.BadArgument
     )
     
     if isinstance(error, commands.errors.CommandNotFound):
@@ -520,6 +523,25 @@ async def oll(ctx, *info):
     sent = await ctx.send(embed=poll)
     for i in range(len(answers)):
         await sent.add_reaction(emojis[chr(i + ord('A'))])
+
+
+forbidden = [822938185696411679, 453350283242897430]
+@bot.command(name="oints", help="Gives Oliver points, or takes them away.")
+async def points(ctx, amt: float, *args):
+    if ctx.author.id in forbidden and amt != 0:
+        await ctx.send("You can't modify your own point balance!")
+        return
+    elif math.isnan(amt):
+        await ctx.send("That's not a number!")
+        return
+    
+    if ' '.join(args) == "reset --HEAD":
+        amt = float("-inf")
+    
+    num_points = get_metadata("opoints")
+    num_points = max(0, num_points + amt)
+    set_metadata("opoints", num_points)
+    await ctx.send(f"Oliver now has {num_points} points.")
 
 
 @bot.command(name="repeat", help="Repeats your words.")
