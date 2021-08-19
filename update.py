@@ -38,6 +38,7 @@ if __name__ == "__main__":
 
         # Insert any new comics
         if not comicdata.find_one({"nr": number}):
+            print(f"Inserting: {comic}")
             comicdata.insert_one({
                 "nr": number,
                 "name": name,

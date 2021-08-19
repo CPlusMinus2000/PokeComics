@@ -67,3 +67,11 @@ def get_date(field: str) -> date:
     update = comicdata.find_one({"name": "viewstats"})[field]
     return date(*map(int, update.split('-')))
 
+
+def published(cnum: int) -> str:
+    """
+    Gets the publishing date of Comic #[cnum].
+    """
+
+    comic = comicdata.find_one({"nr": cnum})
+    return comic["published"]

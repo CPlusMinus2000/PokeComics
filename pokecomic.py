@@ -13,7 +13,7 @@ from update import NUM_DIGITS as ND
 from pokeapi import Pokemon, special_cases
 from dexload import MAX_POKEMON
 
-from modules.database import get_metadata, update_members, set_metadata
+from modules.database import *
 from modules.misc import *
 from modules.comic import *
 from modules.silly import *
@@ -253,7 +253,8 @@ async def latest(ctx):
 @bot.command(name="status", help=dialogue["status_help"])
 async def status(ctx):
     latest, lview = get_metadata("latest"), get_metadata("lviewed")
-    update = date.fromisoformat(get_metadata("updated")).strftime("%B %d, %Y")
+    pub = published(latest)
+    update = date.fromisoformat(pub[:pub.find('T')]).strftime("%B %d, %Y")
     await ctx.send(dialogue["status_msg"] % (lview, latest, update))
 
 
