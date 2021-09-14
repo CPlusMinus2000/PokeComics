@@ -1,9 +1,19 @@
+# Pictures
 *.png
 *.jpg
 *.jpeg
 *.tif
 *.tiff
+
+# Music
+*.webm
+*.part
+*.m4a
+
+# Defunct virtual environment
 ccvenv
+
+# Data files
 .env
 package.json
 pokeapi/*.json

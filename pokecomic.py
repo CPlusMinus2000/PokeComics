@@ -4,7 +4,7 @@ import discord
 import random
 import json
 import math
-from discord.ext import commands
+from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from datetime import datetime, date, timedelta
 from glob import glob
@@ -19,6 +19,7 @@ from modules.comic import *
 from modules.silly import *
 from modules.dialogue import dialogue
 from modules.emojis import emojis
+from modules.music import YTDLSource
 from words.words import words
 
 # Some Discord authentication information
@@ -262,6 +263,30 @@ async def status(ctx):
 async def statsu(ctx):
     latest, lview = get_metadata("latest"), get_metadata("lviewed")
     await ctx.send(dialogue["statsu_msg"] % (lview, latest))
+
+@bot.command(name="ublished", help=dialogue["published_help"])
+async def ublished(ctx, content: str):
+    content = content.strip()
+    lv = get_metadata("lviewed")
+    lat = get_metadata("latest")
+
+    if content.isdigit():
+        cnum = leading_num(content)
+        if cnum > lat or cnum < 1:
+            await ctx.send(dialogue["comic_unavailable"])
+        else:
+            pub = published(cnum)
+            update = date.fromisoformat(pub[:pub.find('T')]).strftime("%B %d, %Y")
+            await ctx.send(dialogue["published_msg"] % (cnum, update))
+    
+    elif "latest" in content:
+        pub = published(lat)
+        update = date.fromisoformat(pub[:pub.find('T')]).strftime("%B %d, %Y")
+        await ctx.send(dialogue["published_msg"] % (lat, update))
+    
+    else:
+        await ctx.send(dialogue["comic_unrecognized"] % content)
+
 
 
 @bot.command(name="search", help=dialogue["search_help"])
@@ -543,6 +568,62 @@ async def points(ctx, amt: float, *args):
     num_points = max(0, num_points + amt)
     set_metadata("opoints", num_points)
     await ctx.send(f"Oliver now has {num_points} points.")
+
+
+@bot.command(name='join', help='Tells me to join the voice channel.')
+async def join(ctx):
+    if not ctx.message.author.voice:
+        await ctx.send(f"You're not connected to a voice channel <:sadpip:{SADPIP_ID}>")
+        return
+    else:
+        channel = ctx.message.author.voice.channel
+    
+    await channel.connect()
+
+@bot.command(name='leave', help='Makes me leave the voice channel.')
+async def leave(ctx):
+    voice_client = ctx.message.guild.voice_client
+    if voice_client is not None and voice_client.is_connected():
+        await voice_client.disconnect()
+    else:
+        await ctx.send("I'm not connected to a voice channel!")
+
+@bot.command(name='lay', help='Plays a song.')
+async def play(ctx,url):
+    try:
+        server = ctx.message.guild
+        voice_channel = server.voice_client
+
+        async with ctx.typing():
+            filename = await YTDLSource.from_url(url, loop=bot.loop)
+            voice_channel.play(discord.FFmpegPCMAudio(source=filename))
+        await ctx.send('**Now playing:** {}'.format(filename))
+    except:
+        await ctx.send("I'm not connected to a voice channel!")
+
+@bot.command(name='ause', help='Pauses the song.')
+async def pause(ctx):
+    voice_client = ctx.message.guild.voice_client
+    if voice_client is not None and voice_client.is_playing():
+        voice_client.pause()
+    else:
+        await ctx.send("I'm not playing anything at the moment.")
+    
+@bot.command(name='resume', help='Resumes the song')
+async def resume(ctx):
+    voice_client = ctx.message.guild.voice_client
+    if voice_client is not None and voice_client.is_paused():
+        voice_client.resume()
+    else:
+        await ctx.send("I wasn't playing anything before this. Try the $play command?")
+
+@bot.command(name='stop', help='Stops the song.')
+async def stop(ctx):
+    voice_client = ctx.message.guild.voice_client
+    if voice_client is not None and voice_client.is_playing():
+        voice_client.stop()
+    else:
+        await ctx.send("I'm not playing anything at the moment.")
 
 
 @bot.command(name="repeat", help="Repeats your words.")

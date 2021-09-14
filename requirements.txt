@@ -5,3 +5,4 @@ dnspython
 lorem
 pokepy
 pyyaml
+youtube-dl

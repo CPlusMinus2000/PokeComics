@@ -3,7 +3,6 @@
 import os
 import discord
 import asyncio
-import json
 
 from typing import Union
 from update import NUM_DIGITS as ND

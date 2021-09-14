@@ -35,8 +35,13 @@ status_help: Gets the current status of comics.
 status_msg: > 
     %d comics have been viewed so far, and #%d, drawn on %s, is the latest.
 
+# Might change these to use Google translate from status
 statsu_help: 漫画の現在のstatsuを取得します。
 statsu_msg: "これまでに%d冊の漫画が描かれ、最新の漫画は%d冊です。"
+
+# Published
+published_help: Reports the publication date of a given comic.
+published_msg: Comic \#%d was published on %s.
 
 # Search command dialogue
 search_help: Searches for a comic given some text.
