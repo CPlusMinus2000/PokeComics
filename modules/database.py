@@ -29,6 +29,9 @@ def get_metadata(field: str) -> int:
 
     return comicdata.find_one({"name": "viewstats"})[field]
 
+# This is a dictionary of people in the server
+people = get_metadata("members")
+people = {int(key): value for key, value in people.items()}
 
 def set_metadata(field: str, value) -> None:
     """

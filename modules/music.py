@@ -2,6 +2,7 @@
 import youtube_dl
 import asyncio
 import discord
+from requests import get
 
 youtube_dl.utils.bug_reports_message = lambda: ''
 
@@ -23,6 +24,19 @@ ffmpeg_options = {
 }
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+
+YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}
+
+def search(arg):
+    with youtube_dl.YoutubeDL(YDL_OPTIONS) as ydl:
+        try:
+            get(arg) 
+        except:
+            video = ydl.extract_info(f"ytsearch:{arg}", download=False)['entries'][0]
+        else:
+            video = ydl.extract_info(arg, download=False)
+
+    return video
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):

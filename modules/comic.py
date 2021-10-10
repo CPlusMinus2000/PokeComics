@@ -10,7 +10,7 @@ from glob import glob
 from pathlib import Path
 from datetime import date, datetime
 
-from modules.database import db_update, get_date, get_metadata
+from modules.database import db_update, get_date, get_metadata, people
 from modules.misc import bounds
 
 # Place where I store all the comics
@@ -24,10 +24,6 @@ DELETE = '🗑️'
 
 # File extensions that Discord can display directly
 DISPLAY = (".png", ".PNG", ".jpg", ".jpeg", ".JPG", ".JPEG")
-
-# This is a dictionary of people in the server
-people = get_metadata("members")
-people = {int(key): value for key, value in people.items()}
 
 # List of authorized people
 authorized = ["The20thIcosahedron"]

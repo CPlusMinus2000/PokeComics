@@ -20,7 +20,7 @@ from modules.silly import *
 from modules.dialogue import dialogue
 from modules.emojis import emojis
 from modules.music import YTDLSource
-from words.words import words
+from modules.shop import shop, perview
 
 # Some Discord authentication information
 load_dotenv()
@@ -34,20 +34,6 @@ bot = commands.Bot(command_prefix='$p', intents=intents)
 
 # Boolean for particular questions
 listen = False
-
-# Colours
-COLOURS = {
-    "black": discord.Color.from_rgb(0, 0, 0),
-    "blue": discord.Color.blue(),
-    "brown": discord.Color.from_rgb(165, 42, 42),
-    "gray": discord.Color.light_gray(),
-    "green": discord.Color.green(),
-    "pink": discord.Color.from_rgb(255, 192, 203),
-    "purple": discord.Color.purple(),
-    "red": discord.Color.red(),
-    "white": discord.Color.from_rgb(255, 255, 255),
-    "yellow": discord.Color.gold()
-}
 
 DAILY_WAIT = timedelta(hours = 23)
 
@@ -393,106 +379,14 @@ async def balance(ctx):
     await ctx.send(dialogue["balance_msg"] % (mention, points))
 
 
-@bot.command(name="words", help=dialogue["words_help"])
-async def word(ctx, spec: str, content: str, *options):
-    """
-    Processes a fact purchase, for some extra comic details.
-
-    Parameters
-    ----------
-    spec : str
-        The category of the fact requested.
-    
-    content : str
-        The number of the fact requested, or a specifying command (i.e. rand).
-    
-    options : Iterable[str]
-        Some helpful options for certain commands, i.e., whether or not
-        a new or old command is wanted for random generation.
-    """
-
-    if spec not in words:
-        await ctx.send(dialogue["words_fail"] % spec)
-        return
-
-    seen = people[ctx.author.id]["facts"][spec]
-    if content.isdigit():
-        num = int(content)
-        if num <= 0 or num > len(words[spec]):
-            await ctx.send(dialogue["words_oob"] % (spec, len(words[spec])))
-        else:
-            if len(seen) < len(words[spec]):
-                seen += [False] * (len(words[spec]) - len(seen))
-
-            if not seen[num - 1] and people[ctx.author.id]["points"] < 100:
-                await ctx.send(dialogue["words_poor"])
-                return
-            elif not seen[num - 1]:
-                people[ctx.author.id]["points"] -= 100
-                seen[num - 1] = True
-
-            await ctx.send(words[spec][num - 1])
-    
-    elif "rand" in content:
-        if not options:
-            await ctx.send(dialogue["words_no_options"])
-        elif "new" in options[0] and people[ctx.author.id]["points"] < 100:
-            await ctx.send(dialogue["words_poor"])
-            return
-        elif "new" in options[0]:
-            unseen = [n for n in range(len(seen)) if not seen[n]]
-            if not unseen:
-                await ctx.send(dialogue["words_seen_all"])
-            else:
-                num = random.sample(unseen, 1)[0]
-                people[ctx.author.id]["points"] -= 100
-                seen[num - 1] = True
-                await ctx.send(words[spec][num])
-        elif "old" in options[0]:
-            haveseen = [n for n in range(len(seen)) if seen[n]]
-            if not haveseen:
-                await ctx.send(dialogue["words_seen_all"])
-            else:
-                num = random.sample(haveseen, 1)[0]
-                await ctx.send(words[spec][num])
-        
-        else:
-            await ctx.send(dialogue["words_no_options"])
-    
-    else:
-        await ctx.send(dialogue["words_unrecognized_content"])
-    
-    update_members(people)
+@bot.command(name="shop", help=dialogue["shop_help"])
+async def shopping(ctx, spec, content, *options):
+    await shop(ctx, spec, content, *options)
 
 
 @bot.command(name="erview", help="Checks which facts you have received.")
-async def perview(ctx, *specs):
-    """
-    Displays which facts have already been asked for.
-    """
-
-    if not specs:
-        specs = ("details", "lore", "references")
-    else:
-        for spec in specs:
-            if spec not in words:
-                await ctx.send(dialogue["words_fail"] % spec)
-
-    viewed = discord.Embed(title="Viewed", color=COLOURS["gray"])
-    for sp in specs:
-        seen = people[ctx.author.id]["facts"][sp]
-        fs = [str(n + 1) for n in range(len(seen)) if seen[n]]
-        if fs:
-            s = 's' if len(fs) > 1 else ''
-            nums = ', '.join(fs[:-1])
-            comma = ',' if len(fs) > 2 else ''
-            info = f"{nums}{comma} and {fs[-1]}" if len(fs) > 1 else fs[0]
-            viewed.add_field(name=sp.title(), 
-                value=dialogue["pv_pos"] % (sp, s, info, len(words[sp])))
-        else:
-            viewed.add_field(name=sp.title(), value=dialogue["pv_zero"] % sp)
-    
-    await ctx.send(embed=viewed)
+async def erview(ctx, *specs):
+    await perview(ctx, *specs)
 
 
 @bot.command(name="slots", help="Plays some slots!")
@@ -598,6 +492,7 @@ async def play(ctx,url):
             filename = await YTDLSource.from_url(url, loop=bot.loop)
             voice_channel.play(discord.FFmpegPCMAudio(source=filename))
         await ctx.send('**Now playing:** {}'.format(filename))
+    
     except:
         await ctx.send("I'm not connected to a voice channel!")
 
@@ -622,6 +517,7 @@ async def stop(ctx):
     voice_client = ctx.message.guild.voice_client
     if voice_client is not None and voice_client.is_playing():
         voice_client.stop()
+        os.system("rmusic")
     else:
         await ctx.send("I'm not playing anything at the moment.")
 

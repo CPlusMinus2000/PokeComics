@@ -76,12 +76,18 @@ balance_help: Gets your points balance. How much have you made?
 balance_msg: "%s, you have accrued %d Pokédollars."
 
 # Spending
+shop_help: | 
+    Opens the shop. Lots to buy! Some options:
+        $pshop words [details|lore|references] [number|rand [old|new]]
+
+spec_fail: "The topic '%s' doesn't exist. Try $phelp shop?"
 words_help: |
     Buys a fact using 100 of your hard-earned Pokédollars.
     You can choose between "lore", "references", and "details" for spec.
     Content represents the specific choice of fact, they're all numbered.
 words_fail: >
-    The topic '%s' doesn't exist. Try $pwords [lore|references|details]?
+    Not the right format given for $pwords %s %s %s. Please see $phelp shop
+    for more information. 
 words_poor: You don't have enough Pokédollars for that!
 words_oob: >
     That fact number is out of bounds. Currently, you can access %s facts
