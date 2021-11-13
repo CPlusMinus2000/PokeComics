@@ -79,14 +79,15 @@ balance_msg: "%s, you have accrued %d Pokédollars."
 shop_help: | 
     Opens the shop. Lots to buy! Some options:
         $pshop words [details|lore|references] [number|rand [old|new]]
+        $pshop rphone [main] [number|title]
 
 spec_fail: "The topic '%s' doesn't exist. Try $phelp shop?"
 words_help: |
     Buys a fact using 100 of your hard-earned Pokédollars.
     You can choose between "lore", "references", and "details" for spec.
     Content represents the specific choice of fact, they're all numbered.
-words_fail: >
-    Not the right format given for $pwords %s %s %s. Please see $phelp shop
+shop_fail: >
+    Not the right format given for $pshop %s %s %s. Please see $phelp shop
     for more information. 
 words_poor: You don't have enough Pokédollars for that!
 words_oob: >
@@ -101,6 +102,8 @@ words_seen_all: You've already seen all the facts in that category!
 words_unrecognized_content: >
     I don't recognize the content specifier. Please give either a number
     or the letters "rand" if you want a random fact.
+
+rphone_no_comic: I don't recognize that comic number/name. Please try again.
 
 pv_pos: You have viewed %s fact%s %s of %d.
 pv_zero: You haven't viewed any %s facts yet.
