@@ -60,6 +60,7 @@ def default_member(mem: discord.Member) -> Member:
             w: [False] * WORDS_DEFAULT_LENGTH for w in words
         },
         "rphone": {
-            t: [False] * RPHONE_DEFAULT_LENGTH for t in RPHONE_TOPICS
+            t: [False] * RPHONE_DEFAULT_LENGTH
+            for t in RPHONE_TOPICS if t != "main"
         },
     }
