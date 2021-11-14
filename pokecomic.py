@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from datetime import datetime, date, timedelta
 from glob import glob
 
-from update import NUM_DIGITS as ND
+from modules.config import NUM_DIGITS as ND, default_member, COLOURS, SADPIP_ID
 from pokeapi import Pokemon, special_cases
 from dexload import MAX_POKEMON
 
@@ -53,12 +53,7 @@ async def on_ready():
         members = get_metadata("members")
         for g in bot.guilds:
             for m in g.members:
-                members[str(m.id)] = {
-                    "name": m.name,
-                    "daily": datetime.min.isoformat(),
-                    "streak": 0,
-                    "points": 100
-                }
+                members[str(m.id)] = default_member(m)
         
         update_members(members)
     

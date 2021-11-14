@@ -6,3 +6,5 @@ lorem
 pokepy
 pyyaml
 youtube-dl
+flake8
+black

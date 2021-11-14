@@ -7,19 +7,11 @@ import os
 from modules.database import people, update_members
 from modules.dialogue import dialogue
 from modules.misc import COLOURS
+from modules.config import RPHONE_TOPICS, NUM_DIGITS as ND
 from words.words import words
-from update import NUM_DIGITS as ND
 from glob import glob
 
 
-RPHONE_TOPICS = {
-    "main": "",
-    "world": 'w',
-    "battle": 'b',
-    "people": 'p',
-    "scitech": 's',
-    "other": 'o'
-}
 IMAGE_WIDTH = 1200
 CONVERT = f'convert "%s" -resize {IMAGE_WIDTH} "%s" > /dev/null'
 
@@ -128,6 +120,11 @@ async def shop(ctx, spec: str, content: str, *options):
                 os.system(f'chmod a+rx "{pcomic}"')
 
             await ctx.send(file=discord.File(pcomic))
+        
+        else:
+            # Purchase time
+            # Except not, because I have no testing material
+            pass
 
     update_members(people)
 

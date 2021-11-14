@@ -1,8 +1,9 @@
 """Database interface functions."""
 
 from typing import Dict
-from update import client, comicdata, NUM_DIGITS as ND
+from update import client, comicdata
 from datetime import date
+from modules.config import NUM_DIGITS as ND
 
 def db_update(comic_num: int) -> None:
     """

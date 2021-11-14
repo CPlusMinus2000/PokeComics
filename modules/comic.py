@@ -5,13 +5,13 @@ import discord
 import asyncio
 
 from typing import Union
-from update import NUM_DIGITS as ND
 from glob import glob
 from pathlib import Path
 from datetime import date, datetime
 
 from modules.database import db_update, get_date, get_metadata, people
 from modules.misc import bounds
+from modules.config import NUM_DIGITS as ND
 
 # Place where I store all the comics
 SITE = "https://student.cs.uwaterloo.ca/~cqhe/"

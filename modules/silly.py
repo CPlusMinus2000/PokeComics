@@ -5,8 +5,8 @@ import lorem
 import contextlib
 from io import StringIO
 from update import client
+from modules.config import SADPIP_ID
 
-SADPIP_ID = 825045713515315261
 
 @contextlib.contextmanager
 def stdoutIO(stdout=None):

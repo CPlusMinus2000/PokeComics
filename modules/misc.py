@@ -3,22 +3,6 @@ from typing import Tuple, List
 from datetime import date, time
 from glob import glob
 
-import discord
-
-# Colours
-COLOURS = {
-    "black": discord.Color.from_rgb(0, 0, 0),
-    "blue": discord.Color.blue(),
-    "brown": discord.Color.from_rgb(165, 42, 42),
-    "gray": discord.Color.light_gray(),
-    "green": discord.Color.green(),
-    "pink": discord.Color.from_rgb(255, 192, 203),
-    "purple": discord.Color.purple(),
-    "red": discord.Color.red(),
-    "white": discord.Color.from_rgb(255, 255, 255),
-    "yellow": discord.Color.gold()
-}
-
 
 # Start and ending times (so morning comics can only be seen from 6:00-7:30)
 #  but converted to E[SD]T because that's where I'm hosting the bot from
