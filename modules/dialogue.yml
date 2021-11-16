@@ -70,7 +70,7 @@ dex_fail: Hm... I've never met a Pokémon with that number.
 # Daily
 daily_help: Gets a daily reward!
 daily_success: A new day, a new reward. You've earned 50 Pokédollars!.
-daily_fail: "Too soon. Please wait %d hour%s, %d minute%s and %d second%s."
+daily_fail: "Too soon! Please wait %d hour%s, %d minute%s and %d second%s."
 
 balance_help: Gets your points balance. How much have you made?
 balance_msg: "%s, you have accrued %d Pokédollars."
@@ -78,16 +78,17 @@ balance_msg: "%s, you have accrued %d Pokédollars."
 # Spending
 shop_help: | 
     Opens the shop. Lots to buy! Some options:
-        $pshop words [details|lore|references] [number|rand [old|new]]
-        $pshop rphone [main] [number|title]
+        $pshop facts <details|lore|references> <number|rand <old|new>>
+        $pshop rphone <main|battle|people|scitech|world|other> <number|title>
 
+shop_price: All %ss are %d Pokédollars. All sales final.
 spec_fail: "The topic '%s' doesn't exist. Try $phelp shop?"
 words_help: |
     Buys a fact using 100 of your hard-earned Pokédollars.
     You can choose between "lore", "references", and "details" for spec.
     Content represents the specific choice of fact, they're all numbered.
 shop_fail: >
-    Not the right format given for $pshop %s %s %s. Please see $phelp shop
+    Not the right format given for $pshop %s %s%s. Please see $phelp shop
     for more information. 
 words_poor: You don't have enough Pokédollars for that!
 words_oob: >
@@ -105,8 +106,18 @@ words_unrecognized_content: >
 
 rphone_no_comic: I don't recognize that comic number/name. Please try again.
 
-pv_pos: You have viewed %s fact%s %s of %d.
-pv_zero: You haven't viewed any %s facts yet.
+pv_pos: You have purchased %s %s%s %s of %d.
+pv_zero: You haven't purchased any %s %ss of the %d available yet.
+
+purchased_help: >
+    Checks your purchase history. Some examples:
+        $purchased facts [specifiers]  # Checks your purchased facts.
+        $purchased rphone [specifiers] # Checks your purchased Rotom phone comics.
+    
+    Here 'specifiers' represents subcategories that you can look for!
+    For example, "$purchased rphone battle world" will tell you which rphone comics
+    under the categories "battle" and "world" you have purchased.
+    If you don't provide any specifiers, I'll automatically fill in all possible ones for you!
 
 # General dialogue
 construction: Under construction. Please check back later.

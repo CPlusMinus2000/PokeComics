@@ -7,6 +7,7 @@ from datetime import datetime
 from words.words import words
 
 Member = Dict[str, Union[str, int, Dict[str, List[bool]]]]
+Comic = Dict[str, Union[str, int, bool]]
 
 # NUM_DIGITS is a really important constant -- it governs how much padding
 # the program looks for in comic numbers. The fact that my comics
@@ -15,6 +16,10 @@ Member = Dict[str, Union[str, int, Dict[str, List[bool]]]]
 # are other ways to do this, but this is for historical reasons.
 # Hopefully this never breaks.
 NUM_DIGITS = 3
+
+# Some common database search filters
+MEMBERS = {"name": "members"}
+VIEWSTATS = {"name": "viewstats"}
 
 POINTS_DEFAULT = 100
 SADPIP_ID = 825045713515315261
@@ -28,6 +33,10 @@ RPHONE_TOPICS = {
     "scitech": 's',
     "other": 'o'
 }
+
+# Turns out these are quite useful, so let's make them constants
+RPHONE_TOPICS_PAID = {t for t in RPHONE_TOPICS if t != "main"}
+RPHONE_HEADERS = {f"r{h}" for h in RPHONE_TOPICS.values()}
 
 # Colours
 COLOURS = {

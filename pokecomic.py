@@ -20,7 +20,7 @@ from modules.silly import *
 from modules.dialogue import dialogue
 from modules.emojis import emojis
 from modules.music import YTDLSource
-from modules.shop import shop, perview
+from modules.shop import shop, purchased
 
 # Some Discord authentication information
 load_dotenv()
@@ -50,7 +50,7 @@ async def on_ready():
     await bot.change_presence(activity=discord.Game(name="Voltorb Flip"))
 
     if False: # This exists so I can regenerate the members list
-        members = get_metadata("members")
+        members = get_members()
         for g in bot.guilds:
             for m in g.members:
                 members[str(m.id)] = default_member(m)
@@ -379,9 +379,9 @@ async def shopping(ctx, spec, content, *options):
     await shop(ctx, spec, content, *options)
 
 
-@bot.command(name="erview", help="Checks which facts you have received.")
-async def erview(ctx, *specs):
-    await perview(ctx, *specs)
+@bot.command(name="urchased", help=dialogue["purchased_help"])
+async def urchased(ctx, topic: str, *specs):
+    await purchased(ctx, topic, *specs)
 
 
 @bot.command(name="slots", help="Plays some slots!")
@@ -478,7 +478,7 @@ async def leave(ctx):
         await ctx.send("I'm not connected to a voice channel!")
 
 @bot.command(name='lay', help='Plays a song.')
-async def play(ctx,url):
+async def play(ctx, url):
     try:
         server = ctx.message.guild
         voice_channel = server.voice_client
