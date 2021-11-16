@@ -4,10 +4,12 @@ import discord
 import random
 import os
 
+from discord.ext.commands import Context
 from modules.database import get_comic, get_comics, people, update_members
 from modules.dialogue import dialogue
 from modules.config import RPHONE_TOPICS, RPHONE_TOPICS_PAID
-from modules.config import COLOURS, NUM_DIGITS as ND
+from modules.config import COLOURS, NUM_DIGITS as ND, SLOT_INFO, SLOT_FAIL
+from typing import List, Tuple
 from words.words import words
 from glob import glob
 
@@ -20,6 +22,24 @@ RPHONE = {"rphone"}
 ALL_TOPICS = WORDS | RPHONE
 
 PRICE = 100
+SLOTS_PRICE = 2
+
+def charge(people, user: discord.User, price: int, info: str) -> str:
+    """
+    Charges the user for a purchase, or returns an error message
+    if the purchase couldn't go through.
+    """
+
+    if user.id not in people:
+        raise ValueError("User not in database")
+    
+    if people[user.id]["points"] < price:
+        balance = people[user.id]["points"]
+        return dialogue["shop_poor"] % (user.mention, price, balance)
+    else:
+        people[user.id]["points"] -= price
+        update_members(people)
+        return ""  # Empty string signifies success, since it's falsy
 
 async def shop(ctx, spec: str, content: str, *options):
     """
@@ -64,14 +84,14 @@ async def shop(ctx, spec: str, content: str, *options):
 
             if len(seen) < len(words[content]):
                 seen += [False] * (len(words[content]) - len(seen))
-
-            if not seen[num - 1] and people[ctx.author.id]["points"] < 100:
-                await ctx.send(dialogue["words_poor"])
-                return
-
-            elif not seen[num - 1]:
-                people[ctx.author.id]["points"] -= 100
-                seen[num - 1] = True
+           
+            if not seen[num - 1]:
+                msg = charge(people, ctx.author, PRICE, "fact")
+                if msg:
+                    await ctx.send(msg)
+                    return
+                else:
+                    seen[num - 1] = True
 
             await ctx.send(words[content][num - 1])
 
@@ -149,13 +169,13 @@ async def shop(ctx, spec: str, content: str, *options):
                 if len(seen) < com["nr"]:
                     seen += [False] * (com["nr"] - len(seen))
                 
-                if not seen[num] and people[ctx.author.id]["points"] < 100:
-                    await ctx.send(dialogue["words_poor"])
-                    return
-                
-                elif not seen[num]:
-                    people[ctx.author.id]["points"] -= 100
-                    seen[num] = True
+                if not seen[num]:
+                    msg = charge(people, ctx.author, PRICE, "rphone")
+                    if msg:
+                        await ctx.send(msg)
+                        return
+                    else:
+                        seen[num] = True
                 
                 snum = str(num).zfill(ND)
                 base = f"Comics/{tag}{snum} - {com['name']}"
@@ -229,3 +249,58 @@ async def purchased(ctx, topic: str, *specs):
             )
 
     await ctx.send(embed=viewed)
+
+
+def spin_slots(reels: int, emojis) -> Tuple[str, List[str]]:
+    """
+    Spins the slots! Returns the result and the list of symbols.
+    """
+
+    reels = [random.choice(list(SLOT_INFO.keys())) for _ in range(reels)]
+    result = reels[0] if all(r == reels[0] for r in reels) else SLOT_FAIL
+    symbols = [
+        str(discord.utils.get(emojis, name=f"slots_{r}")) for r in reels
+    ]
+    return result, symbols
+
+async def play_slots(ctx: Context, emojis, slots: int=3):
+    """
+    Plays some slots!
+    """
+
+    prize_multiplier = 6 ** (slots - 3)
+    pay_multiplier = 1
+    if slots < 1:
+        await ctx.send(dialogue["slots_oob"])
+        return
+    elif slots > 25:
+        await ctx.send(dialogue["slots_many"])
+        return
+    elif slots < 3:
+        pay_multiplier = prize_multiplier = 0
+    
+    # Charge the user
+    msg = charge(
+        people, ctx.author, SLOTS_PRICE * pay_multiplier, "round of slots"
+    )
+    if msg:
+        await ctx.send(msg)
+        return
+    
+    # Spin up the slots
+    play = True
+    while play:
+        result, symbols = spin_slots(slots, emojis)
+        await ctx.send(''.join(symbols))
+        play = False
+        if result == SLOT_FAIL:
+            await ctx.send(dialogue["slots_fail"])
+            break
+        elif result == "replay":
+            play = True
+        
+        prize = SLOT_INFO[result]
+        await ctx.send(random.choice(dialogue["slots_win"]) % prize)
+        people[ctx.author.id]["points"] += prize * prize_multiplier
+    
+    update_members(people)

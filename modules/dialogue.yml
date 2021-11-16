@@ -91,6 +91,9 @@ shop_fail: >
     Not the right format given for $pshop %s %s%s. Please see $phelp shop
     for more information. 
 words_poor: You don't have enough Pokédollars for that!
+shop_poor: > 
+    Hey %s, you don't have enough points for a %s!
+    They cost %d points each, and you only have %d points in your balance.
 words_oob: >
     That fact number is out of bounds. Currently, you can access %s facts
     1 through %d.
@@ -118,6 +121,15 @@ purchased_help: >
     For example, "$purchased rphone battle world" will tell you which rphone comics
     under the categories "battle" and "world" you have purchased.
     If you don't provide any specifiers, I'll automatically fill in all possible ones for you!
+
+slots_oob: Haha. That doesn't make any sense.
+slots_many: That's a lotta slots! I can't run that many, sorry!
+slots_fail: Sorry, you lost. Better luck next time!
+slots_win:
+    - You won %d Pokédollars!
+    - You won! Here's %d Pokédollars!
+    - "You won! Here's your prize: %d Pokédollars."
+    - Winner winner! Have %d Pokédollars.
 
 # General dialogue
 construction: Under construction. Please check back later.

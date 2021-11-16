@@ -10,6 +10,7 @@ from datetime import datetime, date, timedelta
 from glob import glob
 
 from modules.config import NUM_DIGITS as ND, default_member, COLOURS, SADPIP_ID
+from modules.config import TOKEN, GUILD
 from pokeapi import Pokemon, special_cases
 from dexload import MAX_POKEMON
 
@@ -20,12 +21,7 @@ from modules.silly import *
 from modules.dialogue import dialogue
 from modules.emojis import emojis
 from modules.music import YTDLSource
-from modules.shop import shop, purchased
-
-# Some Discord authentication information
-load_dotenv()
-TOKEN = os.getenv("DISCORD_TOKEN")
-GUILD = os.getenv("DISCORD_GUILD")
+from modules.shop import shop, purchased, play_slots
 
 # Apparently Discord now requires bots to have priveleged intentions
 intents = discord.Intents.all()
@@ -327,8 +323,10 @@ async def pic(ctx, *args):
 
     # Crap tons of info embedding
     guild = discord.utils.get(bot.guilds, name=GUILD)
-    typemojis = [f"{discord.utils.get(guild.emojis, name=t)} {t.capitalize()}"
-                    for t in info.get_types()]
+    typemojis = [
+        f"{discord.utils.get(guild.emojis, name=t)} {t.capitalize()}"
+        for t in info.get_types()
+    ]
     
     typeinfo = '\n'.join(typemojis)
     # typeinfo = '\n'.join(info.get_types(True))
@@ -386,8 +384,8 @@ async def urchased(ctx, topic: str, *specs):
 
 @bot.command(name="slots", help="Plays some slots!")
 async def slots(ctx, slots: int = 3):
-    await ctx.send(dialogue["construction"])
-
+    guild = discord.utils.get(bot.guilds, name=GUILD)
+    await play_slots(ctx, guild.emojis, slots)
 
 # A few joke commands
 @bot.command(name="gstatsu", help="Gives/removes G-statsu.")

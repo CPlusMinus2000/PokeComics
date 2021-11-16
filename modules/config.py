@@ -1,13 +1,20 @@
 # File for constants, hence "configuration"
 
 import discord
+import os
 
+from dotenv import load_dotenv
 from typing import List, Dict, Union, Any
 from datetime import datetime
 from words.words import words
 
 Member = Dict[str, Union[str, int, Dict[str, List[bool]]]]
 Comic = Dict[str, Union[str, int, bool]]
+
+# Some Discord authentication information
+load_dotenv()
+TOKEN = os.getenv("DISCORD_TOKEN")
+GUILD = os.getenv("DISCORD_GUILD")
 
 # NUM_DIGITS is a really important constant -- it governs how much padding
 # the program looks for in comic numbers. The fact that my comics
@@ -51,6 +58,18 @@ COLOURS = {
     "white": discord.Color.from_rgb(255, 255, 255),
     "yellow": discord.Color.gold()
 }
+
+# Slots, names and payouts
+SLOT_INFO = {
+    "berries": 2,
+    "lightning": 10,
+    "moon": 15,
+    "replay": 15,
+    "7": 300,
+    "galactic": 100
+}
+
+SLOT_FAIL = "FAIL"
 
 
 def default_member(mem: discord.Member) -> Member:
