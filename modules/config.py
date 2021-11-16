@@ -44,6 +44,13 @@ RPHONE_TOPICS = {
 # Turns out these are quite useful, so let's make them constants
 RPHONE_TOPICS_PAID = {t for t in RPHONE_TOPICS if t != "main"}
 RPHONE_HEADERS = {f"r{h}" for h in RPHONE_TOPICS.values()}
+PURCHASE_FIELDS = {
+    "facts": sorted(words.keys()),
+    "rphone": sorted(
+        RPHONE_TOPICS_PAID,
+        key=lambda t: "zzzzz" if t.lower() == "other" else t
+    )
+}
 
 # Colours
 COLOURS = {

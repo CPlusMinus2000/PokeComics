@@ -10,7 +10,7 @@ from datetime import datetime, date, timedelta
 from glob import glob
 
 from modules.config import NUM_DIGITS as ND, default_member, COLOURS, SADPIP_ID
-from modules.config import TOKEN, GUILD
+from modules.config import TOKEN, GUILD, PURCHASE_FIELDS
 from pokeapi import Pokemon, special_cases
 from dexload import MAX_POKEMON
 
@@ -378,8 +378,19 @@ async def shopping(ctx, spec, content, *options):
 
 
 @bot.command(name="urchased", help=dialogue["purchased_help"])
-async def urchased(ctx, topic: str, *specs):
-    await purchased(ctx, topic, *specs)
+async def urchased(ctx, *specs):
+    topics = {}
+    if specs and specs[0] == "fact":
+        specs = ("facts",) + specs[1:]
+    
+    if not specs:
+        topics = PURCHASE_FIELDS
+    elif len(specs) == 1 and specs[0] in PURCHASE_FIELDS:
+        topics[specs[0]] = PURCHASE_FIELDS[specs[0]]
+    else:
+        topics[specs[0]] = specs[1:]
+    
+    await purchased(ctx, topics)
 
 
 @bot.command(name="slots", help="Plays some slots!")

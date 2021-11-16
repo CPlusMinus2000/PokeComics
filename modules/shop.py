@@ -7,9 +7,9 @@ import os
 from discord.ext.commands import Context
 from modules.database import get_comic, get_comics, people, update_members
 from modules.dialogue import dialogue
-from modules.config import RPHONE_TOPICS, RPHONE_TOPICS_PAID
+from modules.config import PURCHASE_FIELDS, RPHONE_TOPICS, RPHONE_TOPICS_PAID
 from modules.config import COLOURS, NUM_DIGITS as ND, SLOT_INFO, SLOT_FAIL
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from words.words import words
 from glob import glob
 
@@ -190,63 +190,57 @@ async def shop(ctx, spec: str, content: str, *options):
     update_members(people)
 
 
-async def purchased(ctx, topic: str, *specs):
+async def purchased(ctx, topics: Dict[str, List[str]]):
     """
     Displays some information about your purchase history.
     """
 
-    if topic.lower() not in ALL_TOPICS:
-        await ctx.send(dialogue["spec_fail"] % topic)
-        return
-    elif topic.lower() in WORDS and not specs:
-        specs = ["details", "lore", "references"]
-    elif topic.lower() in RPHONE and not specs:
-        specs = sorted(
-            RPHONE_TOPICS_PAID,
-            key=lambda x: "zzzzz" if x.lower() == "other" else x
-        )
-    else:
-        topics = words if topic.lower() in WORDS else RPHONE_TOPICS_PAID
-        for spec in specs:
-            if spec not in topics:
+    for topic in topics:
+        if topic.lower() not in ALL_TOPICS:
+            await ctx.send(dialogue["spec_fail"] % topic)
+            return
+        
+        for spec in topics[topic]:
+            if spec not in PURCHASE_FIELDS[topic.lower()]:
                 await ctx.send(dialogue["spec_fail"] % spec)
                 return
 
-    content_type = "comic" if topic.lower() in RPHONE else "fact"
+    content_type = "item"
     viewed = discord.Embed(
         title="Purchased",
         description=dialogue["shop_price"] % (content_type, PRICE),
         color=COLOURS["gray"]
     )
 
-    for sp in specs:
-        seen = people[ctx.author.id][topic][sp]
-        fs = [
-            str(n + (topic.lower() in WORDS))
-            for n in range(len(seen)) if seen[n]
-        ]
-        amt = len(words[sp]) if topic.lower() in WORDS else sum(
-            1 for c in get_comics(tag=f"r{RPHONE_TOPICS[sp]}")
-        )
+    for topic in topics:
+        for sp in topics[topic]:
+            seen = people[ctx.author.id][topic][sp]
+            fs = [
+                str(n + (topic.lower() in WORDS))
+                for n in range(len(seen)) if seen[n]
+            ]
+            amt = len(words[sp]) if topic.lower() in WORDS else sum(
+                1 for c in get_comics(tag=f"r{RPHONE_TOPICS[sp]}")
+            )
 
-        if fs:
-            # Have to do a bunch of fancy stuff here to get grammar right
-            s = 's' if len(fs) > 1 else ''
-            nums = ', '.join(fs[:-1])
-            comma = ',' if len(fs) > 2 else ''
-            info = f"{nums}{comma} and {fs[-1]}" if len(fs) > 1 else fs[0]
-            viewed.add_field(
-                name=sp.title(),
-                value=dialogue["pv_pos"] % (
-                    sp, content_type, s, info, amt
+            if fs:
+                # Have to do a bunch of fancy stuff here to get grammar right
+                s = 's' if len(fs) > 1 else ''
+                nums = ', '.join(fs[:-1])
+                comma = ',' if len(fs) > 2 else ''
+                info = f"{nums}{comma} and {fs[-1]}" if len(fs) > 1 else fs[0]
+                viewed.add_field(
+                    name=sp.title(),
+                    value=dialogue["pv_pos"] % (
+                        sp, content_type, s, info, amt
+                    )
                 )
-            )
-        
-        else:
-            viewed.add_field(
-                name=sp.title(), 
-                value=dialogue["pv_zero"] % (sp, content_type, amt)
-            )
+            
+            else:
+                viewed.add_field(
+                    name=sp.title(), 
+                    value=dialogue["pv_zero"] % (sp, content_type, amt)
+                )
 
     await ctx.send(embed=viewed)
 

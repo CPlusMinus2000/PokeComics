@@ -116,6 +116,7 @@ purchased_help: >
     Checks your purchase history. Some examples:
         $purchased facts [specifiers]  # Checks your purchased facts.
         $purchased rphone [specifiers] # Checks your purchased Rotom phone comics.
+        $purchased                     # Checks everything.
     
     Here 'specifiers' represents subcategories that you can look for!
     For example, "$purchased rphone battle world" will tell you which rphone comics
