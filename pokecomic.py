@@ -15,7 +15,7 @@ from pokeapi import Pokemon, special_cases
 from dexload import MAX_POKEMON
 
 from modules.database import *
-from modules.misc import *
+from modules.misc import bounds, insensitive_glob, leading_num, not_everyone
 from modules.comic import *
 from modules.silly import *
 from modules.dialogue import dialogue
@@ -65,13 +65,13 @@ async def on_message(message):
         people[message.author.id] = default_member(message.author)
         update_members(people)
     
-    if bot.user.mentioned_in(message) and "everyone" not in message.content:
-        if "referral" in message.content or "job" in message.content:
+    cont = message.content.lower()
+    if bot.user.mentioned_in(message) and not_everyone(cont):
+        if "referral" in cont or "job" in cont:
             await message.channel.send("Sorry, I don't have a job for you.")
         else:
             await message.channel.send("Hi! What can I do for you?")
     
-    cont = message.content.lower()
     user = message.author.id
     if listen and people[user]["name"] in authorized and 'y' in cont:
         await send_comic(message.channel, get_metadata("lviewed"))

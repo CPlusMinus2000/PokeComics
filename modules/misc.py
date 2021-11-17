@@ -46,3 +46,10 @@ def leading_num(s: str, stop: int = -1) -> int:
     
     return int(s[:(i - 1)])
 
+
+def not_everyone(msg: str) -> bool:
+    """
+    Returns true if the message does not mention multiple people.
+    """
+
+    return "@everyone" not in msg and "@here" not in msg
