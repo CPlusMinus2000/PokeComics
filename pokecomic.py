@@ -61,6 +61,10 @@ async def on_message(message):
     if message.author == bot.user:
         return
     
+    if message.author.id not in people:
+        people[message.author.id] = default_member(message.author)
+        update_members(people)
+    
     if bot.user.mentioned_in(message) and "everyone" not in message.content:
         if "referral" in message.content or "job" in message.content:
             await message.channel.send("Sorry, I don't have a job for you.")
