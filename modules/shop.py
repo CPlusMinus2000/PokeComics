@@ -9,6 +9,7 @@ from modules.database import get_comic, get_comics, people, update_members
 from modules.dialogue import dialogue
 from modules.config import PURCHASE_FIELDS, RPHONE_TOPICS, RPHONE_TOPICS_PAID
 from modules.config import COLOURS, NUM_DIGITS as ND, SLOT_INFO, SLOT_FAIL
+from modules.config import SLOTS_PRICE
 from typing import List, Tuple, Dict
 from words.words import words
 from glob import glob
@@ -22,7 +23,7 @@ RPHONE = {"rphone"}
 ALL_TOPICS = WORDS | RPHONE
 
 PRICE = 100
-SLOTS_PRICE = 2
+SLOTS_MULTIPLIER = 7
 
 def charge(people, user: discord.User, price: int, info: str) -> str:
     """
@@ -262,7 +263,7 @@ async def play_slots(ctx: Context, emojis, slots: int=3):
     Plays some slots!
     """
 
-    prize_multiplier = 6 ** (slots - 3)
+    prize_multiplier = SLOTS_MULTIPLIER ** (slots - 3)
     pay_multiplier = 1
     if slots < 1:
         await ctx.send(dialogue["slots_oob"])

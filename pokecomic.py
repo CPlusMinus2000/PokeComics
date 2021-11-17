@@ -10,7 +10,7 @@ from datetime import datetime, date, timedelta
 from glob import glob
 
 from modules.config import NUM_DIGITS as ND, default_member, COLOURS, SADPIP_ID
-from modules.config import TOKEN, GUILD, PURCHASE_FIELDS
+from modules.config import TOKEN, GUILD, PURCHASE_FIELDS, SLOTS_PRICE
 from pokeapi import Pokemon, special_cases
 from dexload import MAX_POKEMON
 
@@ -393,7 +393,7 @@ async def urchased(ctx, *specs):
     await purchased(ctx, topics)
 
 
-@bot.command(name="slots", help="Plays some slots!")
+@bot.command(name="slots", help=dialogue["slots_help"] % SLOTS_PRICE)
 async def slots(ctx, slots: int = 3):
     guild = discord.utils.get(bot.guilds, name=GUILD)
     await play_slots(ctx, guild.emojis, slots)

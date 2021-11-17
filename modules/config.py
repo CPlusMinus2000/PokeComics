@@ -77,6 +77,7 @@ SLOT_INFO = {
 }
 
 SLOT_FAIL = "FAIL"
+SLOTS_PRICE = 2
 
 
 def default_member(mem: discord.Member) -> Member:

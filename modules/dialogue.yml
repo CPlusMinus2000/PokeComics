@@ -123,6 +123,9 @@ purchased_help: >
     under the categories "battle" and "world" you have purchased.
     If you don't provide any specifiers, I'll automatically fill in all possible ones for you!
 
+slots_help: | 
+    Plays some slots! It's %d Pokédollars per spin.
+    You can also adjust the number of reels you want to spin.
 slots_oob: Haha. That doesn't make any sense.
 slots_many: That's a lotta slots! I can't run that many, sorry!
 slots_fail: Sorry, you lost. Better luck next time!
