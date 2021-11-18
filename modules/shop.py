@@ -265,6 +265,7 @@ async def play_slots(ctx: Context, emojis, slots: int=3):
 
     prize_multiplier = SLOTS_MULTIPLIER ** (slots - 3)
     pay_multiplier = 1
+    extra = ""
     if slots < 1:
         await ctx.send(dialogue["slots_oob"])
         return
@@ -273,6 +274,7 @@ async def play_slots(ctx: Context, emojis, slots: int=3):
         return
     elif slots < 3:
         pay_multiplier = prize_multiplier = 0
+        extra = " Except you didn't, because there aren't enough reels."
     
     # Charge the user
     msg = charge(
@@ -295,7 +297,7 @@ async def play_slots(ctx: Context, emojis, slots: int=3):
             play = True
         
         prize = SLOT_INFO[result]
-        await ctx.send(random.choice(dialogue["slots_win"]) % prize)
+        await ctx.send(random.choice(dialogue["slots_win"]) % prize + extra)
         people[ctx.author.id]["points"] += prize * prize_multiplier
     
     update_members(people)
