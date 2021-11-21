@@ -250,17 +250,25 @@ async def purchased(ctx, topics: Dict[str, List[str]]):
     await ctx.send(embed=viewed)
 
 
-def spin_slots(reels: int, emojis) -> Tuple[str, List[str]]:
+def spin_slots(reels: int, emojis, nice: bool=True) -> Tuple[str, List[str]]:
     """
     Spins the slots! Returns the result and the list of symbols.
     """
 
-    reels = [random.choice(list(SLOT_INFO.keys())) for _ in range(reels)]
-    result = reels[0] if all(r == reels[0] for r in reels) else SLOT_FAIL
+    spun = []
+    for i in range(reels):
+        reel = random.choice(list(SLOT_INFO.keys()))
+        if len(spun) > 0 and reel != spun[-1] and nice:
+            # Increase the odds of winning slightly
+            reel = random.choice(list(SLOT_INFO.keys()))
+        
+        spun.append(reel)
+    
+    result = spun[0] if all(r == spun[0] for r in spun) else SLOT_FAIL
     symbols = [
-        str(discord.utils.get(emojis, name=f"slots_{r}")) for r in reels
+        str(discord.utils.get(emojis, name=f"slots_{r}")) for r in spun
     ]
-    return result, symbols
+    return spun, result, symbols
 
 async def play_slots(ctx: Context, emojis, slots: int=3):
     """
@@ -291,7 +299,7 @@ async def play_slots(ctx: Context, emojis, slots: int=3):
     # Spin up the slots
     play = True
     while play:
-        result, symbols = spin_slots(slots, emojis)
+        _, result, symbols = spin_slots(slots, emojis)
         await ctx.send(''.join(symbols))
         play = False
         if result == SLOT_FAIL:

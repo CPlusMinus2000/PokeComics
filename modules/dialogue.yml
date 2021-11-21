@@ -132,7 +132,7 @@ slots_fail: Sorry, you lost. Better luck next time!
 slots_win:
     - You won %d Pokédollars!
     - You won! Here's %d Pokédollars!
-    - "You won! Here's your prize: %d Pokédollars."
+    - "You won! Here's your prize: %d Pokédollars!"
     - Winner winner! Have %d Pokédollars.
 
 # General dialogue

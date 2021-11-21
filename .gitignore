@@ -17,6 +17,7 @@ ccvenv
 # Data files
 .env
 package.json
+package-lock.json
 pokeapi/*.json
 *.log
 __pycache__
