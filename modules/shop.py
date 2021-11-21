@@ -1,6 +1,7 @@
 # Shop module functions
 
 import discord
+import asyncio
 import random
 import os
 
@@ -185,6 +186,9 @@ async def shop(ctx, spec: str, content: str, *options):
                     orig = base + com["extension"]
                     os.system(CONVERT % (orig, pcomic))
                     os.system(f'chmod a+rx "{pcomic}"')
+
+                    # Sleep for a bit to let the image load
+                    await asyncio.sleep(2)
                 
                 await ctx.send(file=discord.File(pcomic))
 
