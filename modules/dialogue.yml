@@ -2,7 +2,8 @@
 # Comic command dialogue
 comic_help: | 
     Sends a comic. There are some different options available:
-    - `$pcomic NNN` sends the comic with number NNN (i.e. 003, 420, etc.).
+    - `$pcomic NNN` sends the comic with number NNN (i.e. 003, 420, etc.)
+       If a coloured version exists, it will be sent.
     - `$pcomic NNNt` is similar, but sends a .tif rather than a .png.
     - `$pcomic NNNu` sends an uncoloured version of the comic.
     - `$pcomic latest` sends the latest comic that YOU have permission to view.

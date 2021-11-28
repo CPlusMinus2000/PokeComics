@@ -30,6 +30,14 @@ NUM_DIGITS = 3
 MEMBERS = {"name": "members"}
 VIEWSTATS = {"name": "viewstats"}
 
+# Do I need to make her get up early?
+BOUNDS = False
+
+# File conversion stuff
+CONVERT = f'convert "%s" "%s" > /dev/null'
+IMAGE_WIDTH = 1200
+CONVERTR = f'convert "%s" -resize {IMAGE_WIDTH} "%s" &> /dev/null'
+
 POINTS_DEFAULT = 100
 SADPIP_ID = 825045713515315261
 WORDS_DEFAULT_LENGTH = 5
@@ -104,7 +112,11 @@ def default_member(mem: discord.Member) -> Member:
     }
 
 
-async def create_png(tif: str, dest: Optional[str]=None) -> str:
+async def create_png(
+    tif: str, 
+    dest: Optional[str]=None,
+    resize: bool=False
+) -> str:
     """
     Creates a png from a tif.
     TODO: Look into os.chmod, and also not using asyncio.sleep
@@ -114,9 +126,11 @@ async def create_png(tif: str, dest: Optional[str]=None) -> str:
         raise ValueError("Multiple .tifs found in filename")
     
     new = dest if dest is not None else tif.replace(".tif", ".png")
+    convert = CONVERT % (tif, new) if not resize else CONVERTR % (tif, new)
     if not os.path.exists(new) or getmtime(tif) > getmtime(new):
-        os.system(f"convert {tif} {new}")
-        os.system(f"chmod a+rx {new}")
-        asyncio.sleep(2)
+        print(f"Converting {tif} to {new}")
+        os.system(convert)
+        os.system(f"chmod a+rx '{new}'")
+        await asyncio.sleep(2)
     
     return new

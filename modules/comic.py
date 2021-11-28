@@ -77,7 +77,7 @@ async def send_comic(ctx, comic: Union[str, int], colour: bool = True):
         comic = fetch_comic(comic, colour)
     
     name = f"{Path.home()}/public_html/{os.path.splitext(comic)[0]}.png"
-    await create_png(comic, name)
+    await create_png(comic, dest=name)
 
     #TODO: Replace 4 with an actual not-hardcoded index
     fname = '/'.join(name.split('/')[4:]).replace(' ', "%20")

@@ -15,9 +15,6 @@ from words.words import words
 from glob import glob
 
 
-IMAGE_WIDTH = 1200
-CONVERT = f'convert "%s" -resize {IMAGE_WIDTH} "%s" &> /dev/null'
-
 WORDS = {"fact", "facts"}
 RPHONE = {"rphone"}
 ALL_TOPICS = WORDS | RPHONE
@@ -149,7 +146,7 @@ async def shop(ctx, spec: str, content: str, *options):
                 await ctx.send(dialogue["rphone_no_comic"])
                 return
             
-            pcomic = await create_png(clink[0])
+            pcomic = await create_png(clink[0], resize=True)
             await ctx.send(file=discord.File(pcomic))
         
         else:
@@ -175,8 +172,8 @@ async def shop(ctx, spec: str, content: str, *options):
                         seen[num] = True
                 
                 snum = str(num).zfill(ND)
-                base = f"Comics/{tag}{snum} - {com['name']}"
-                pcomic = await create_png(base + com["extension"])
+                name = f"Comics/{tag}{snum} - {com['name']}" + com["extension"]
+                pcomic = await create_png(name, resize=True)
                 await ctx.send(file=discord.File(pcomic))
 
     update_members(people)
