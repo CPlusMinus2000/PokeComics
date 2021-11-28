@@ -370,10 +370,19 @@ async def daily(ctx):
 
 
 @bot.command(name="balance", help=dialogue["balance_help"])
-async def balance(ctx):
+async def balance(ctx, user: discord.User = None):
+    id = ctx.author.id if user is None else user.id
+    if id not in people:
+        await ctx.send(dialogue["user_unrecognized"])
+        return
+    
+    points = people[id]["points"]
     mention = f"<@{ctx.author.id}>"
-    points = people[ctx.author.id]["points"]
-    await ctx.send(dialogue["balance_msg"] % (mention, points))
+
+    if user is None:
+        await ctx.send(dialogue["balance_msg"] % (mention, points))
+    else:
+        await ctx.send(dialogue["user_balance"] % (mention, user.name, points))
 
 
 @bot.command(name="shop", help=dialogue["shop_help"])

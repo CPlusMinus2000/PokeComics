@@ -1,7 +1,6 @@
 # Shop module functions
 
 import discord
-import asyncio
 import random
 import os
 
@@ -10,7 +9,7 @@ from modules.database import get_comic, get_comics, people, update_members
 from modules.dialogue import dialogue
 from modules.config import PURCHASE_FIELDS, RPHONE_TOPICS, RPHONE_TOPICS_PAID
 from modules.config import COLOURS, NUM_DIGITS as ND, SLOT_INFO, SLOT_FAIL
-from modules.config import SLOTS_PRICE
+from modules.config import SLOTS_PRICE, create_png
 from typing import List, Tuple, Dict
 from words.words import words
 from glob import glob
@@ -150,11 +149,7 @@ async def shop(ctx, spec: str, content: str, *options):
                 await ctx.send(dialogue["rphone_no_comic"])
                 return
             
-            pcomic = os.path.splitext(clink[0])[0] + ".png"
-            if not os.path.isfile(pcomic):
-                os.system(CONVERT % (clink[0], pcomic))
-                os.system(f'chmod a+rx "{pcomic}"')
-
+            pcomic = await create_png(clink[0])
             await ctx.send(file=discord.File(pcomic))
         
         else:
@@ -168,8 +163,8 @@ async def shop(ctx, spec: str, content: str, *options):
                     await ctx.send(dialogue["rphone_no_comic"])
                     return
                 
-                if len(seen) < com["nr"]:
-                    seen += [False] * (com["nr"] - len(seen))
+                if len(seen) < com["nr"] + 1:
+                    seen += [False] * (com["nr"] - len(seen) + 1)
                 
                 if not seen[num]:
                     msg = charge(people, ctx.author, PRICE, "rphone")
@@ -181,15 +176,7 @@ async def shop(ctx, spec: str, content: str, *options):
                 
                 snum = str(num).zfill(ND)
                 base = f"Comics/{tag}{snum} - {com['name']}"
-                pcomic = base + ".png"
-                if not os.path.isfile(pcomic):
-                    orig = base + com["extension"]
-                    os.system(CONVERT % (orig, pcomic))
-                    os.system(f'chmod a+rx "{pcomic}"')
-
-                    # Sleep for a bit to let the image load
-                    await asyncio.sleep(2)
-                
+                pcomic = await create_png(base + com["extension"])
                 await ctx.send(file=discord.File(pcomic))
 
     update_members(people)
@@ -308,8 +295,8 @@ async def play_slots(ctx: Context, emojis, slots: int=3):
         elif result == "replay":
             play = True
         
-        prize = SLOT_INFO[result]
+        prize = SLOT_INFO[result] * prize_multiplier
         await ctx.send(random.choice(dialogue["slots_win"]) % prize + extra)
-        people[ctx.author.id]["points"] += prize * prize_multiplier
+        people[ctx.author.id]["points"] += prize
     
     update_members(people)

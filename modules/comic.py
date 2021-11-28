@@ -11,7 +11,7 @@ from datetime import date, datetime
 
 from modules.database import db_update, get_date, get_metadata, people
 from modules.misc import bounds
-from modules.config import NUM_DIGITS as ND
+from modules.config import NUM_DIGITS as ND, create_png
 
 # Place where I store all the comics
 SITE = "https://student.cs.uwaterloo.ca/~cqhe/"
@@ -75,11 +75,9 @@ async def send_comic(ctx, comic: Union[str, int], colour: bool = True):
 
     if isinstance(comic, int):
         comic = fetch_comic(comic, colour)
-
+    
     name = f"{Path.home()}/public_html/{os.path.splitext(comic)[0]}.png"
-    if not os.path.exists(name):
-        os.system(f'convert "{comic}" "{name}" > /dev/null')
-        os.system(f"chmod a+rx '{name}'")
+    await create_png(comic, name)
 
     #TODO: Replace 4 with an actual not-hardcoded index
     fname = '/'.join(name.split('/')[4:]).replace(' ', "%20")

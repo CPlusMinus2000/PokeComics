@@ -30,6 +30,9 @@ comic_unrecognized: >
 # Latest command dialogue (there is some overlap with comic)
 latest_help: Gets the latest comic.
 
+# Can't find user
+user_unrecognized: I don't recognize that user. Who is that?
+
 # Status command dialogue
 status_help: Gets the current status of comics.
 status_msg: > 
@@ -74,6 +77,7 @@ daily_fail: "Too soon! Please wait %d hour%s, %d minute%s and %d second%s."
 
 balance_help: Gets your points balance. How much have you made?
 balance_msg: "%s, you have accrued %d Pokédollars."
+user_balance: "%s, %s has accrued %s Pokédollars."
 
 # Spending
 shop_help: | 

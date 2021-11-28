@@ -1,12 +1,14 @@
 # File for constants, hence "configuration"
 
 import discord
+import asyncio
 import os
 
 from dotenv import load_dotenv
-from typing import List, Dict, Union, Any
+from typing import List, Dict, Union, Optional
 from datetime import datetime
 from words.words import words
+from os.path import getmtime
 
 Member = Dict[str, Union[str, int, Dict[str, List[bool]]]]
 Comic = Dict[str, Union[str, int, bool]]
@@ -100,3 +102,21 @@ def default_member(mem: discord.Member) -> Member:
             for t in RPHONE_TOPICS if t != "main"
         },
     }
+
+
+async def create_png(tif: str, dest: Optional[str]=None) -> str:
+    """
+    Creates a png from a tif.
+    TODO: Look into os.chmod, and also not using asyncio.sleep
+    """
+
+    if tif.count(".tif") > 1:
+        raise ValueError("Multiple .tifs found in filename")
+    
+    new = dest if dest is not None else tif.replace(".tif", ".png")
+    if not os.path.exists(new) or getmtime(tif) > getmtime(new):
+        os.system(f"convert {tif} {new}")
+        os.system(f"chmod a+rx {new}")
+        asyncio.sleep(2)
+    
+    return new
