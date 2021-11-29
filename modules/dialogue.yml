@@ -67,6 +67,8 @@ rules_msg: >
     and it'll only come out when she gets up early enough. 
     PokeComicsBot out!
 
+no_rules_msg: There are no rules. There are no bounds. Be free.
+
 # Pokédex command dialogue
 dex_help: Gets a Pokédex entry of the Pokémon given.
 dex_fail: Hm... I've never met a Pokémon with that number.

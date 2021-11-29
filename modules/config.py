@@ -1,14 +1,15 @@
 # File for constants, hence "configuration"
 
 import discord
-import asyncio
 import os
+import subprocess as sp
 
 from dotenv import load_dotenv
-from typing import List, Dict, Union, Optional
-from datetime import datetime
+from typing import List, Dict, Tuple, Union, Optional
+from datetime import datetime, date, time
 from words.words import words
 from os.path import getmtime
+from time import sleep
 
 Member = Dict[str, Union[str, int, Dict[str, List[bool]]]]
 Comic = Dict[str, Union[str, int, bool]]
@@ -32,14 +33,19 @@ VIEWSTATS = {"name": "viewstats"}
 
 # Do I need to make her get up early?
 BOUNDS = False
+TIMEZONE = 3
+STIME = time(5 + TIMEZONE, 0, 0) if BOUNDS else time(0, 0, 0)
+WDETIME = time(8 + TIMEZONE, 10, 10, 10010) if BOUNDS else time.max
+WEETIME = time(8 + TIMEZONE, 10, 10, 10010) if BOUNDS else time.max
 
 # File conversion stuff
-CONVERT = f'convert "%s" "%s" > /dev/null'
+CONVERT = 'convert "%s" "%s" 2> /dev/null'
 IMAGE_WIDTH = 1200
-CONVERTR = f'convert "%s" -resize {IMAGE_WIDTH} "%s" &> /dev/null'
+CONVERTR = f'convert "%s" -resize {IMAGE_WIDTH} "%s" 2> /dev/null'
 
 POINTS_DEFAULT = 100
 SADPIP_ID = 825045713515315261
+SADPIP_STR = f"<:sadpip:{SADPIP_ID}>"
 WORDS_DEFAULT_LENGTH = 5
 RPHONE_DEFAULT_LENGTH = 3
 RPHONE_TOPICS = {
@@ -112,7 +118,22 @@ def default_member(mem: discord.Member) -> Member:
     }
 
 
-async def create_png(
+# Start and ending times (so morning comics can only be seen from 6:00-7:30)
+#  but converted to E[SD]T because that's where I'm hosting the bot from
+def bounds(day: int = date.today().weekday()) -> Tuple[time, time]:
+    """Get the left/right bounds of when comics are available.
+    
+    Parameters
+    ----------
+    day : int
+        A number (0-6) representing a day of the week.
+        By default, it is the current day.
+    """
+
+    return STIME, WEETIME if day in [5, 6] else WDETIME
+
+
+def create_png(
     tif: str, 
     dest: Optional[str]=None,
     resize: bool=False
@@ -129,8 +150,7 @@ async def create_png(
     convert = CONVERT % (tif, new) if not resize else CONVERTR % (tif, new)
     if not os.path.exists(new) or getmtime(tif) > getmtime(new):
         print(f"Converting {tif} to {new}")
-        os.system(convert)
-        os.system(f"chmod a+rx '{new}'")
-        await asyncio.sleep(2)
+        sp.run(convert.split()) 
+        sp.run(f"chmod a+rx {new}".split())
     
     return new

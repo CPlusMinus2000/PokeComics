@@ -10,8 +10,7 @@ from pathlib import Path
 from datetime import date, datetime
 
 from modules.database import db_update, get_date, get_metadata, people
-from modules.misc import bounds
-from modules.config import NUM_DIGITS as ND, create_png
+from modules.config import NUM_DIGITS as ND, create_png, bounds
 
 # Place where I store all the comics
 SITE = "https://student.cs.uwaterloo.ca/~cqhe/"
@@ -77,7 +76,7 @@ async def send_comic(ctx, comic: Union[str, int], colour: bool = True):
         comic = fetch_comic(comic, colour)
     
     name = f"{Path.home()}/public_html/{os.path.splitext(comic)[0]}.png"
-    await create_png(comic, dest=name)
+    create_png(comic, dest=name)
 
     #TODO: Replace 4 with an actual not-hardcoded index
     fname = '/'.join(name.split('/')[4:]).replace(' ', "%20")

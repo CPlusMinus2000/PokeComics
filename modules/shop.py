@@ -2,7 +2,6 @@
 
 import discord
 import random
-import os
 
 from discord.ext.commands import Context
 from modules.database import get_comic, get_comics, people, update_members
@@ -146,7 +145,7 @@ async def shop(ctx, spec: str, content: str, *options):
                 await ctx.send(dialogue["rphone_no_comic"])
                 return
             
-            pcomic = await create_png(clink[0], resize=True)
+            pcomic = create_png(clink[0], resize=True)
             await ctx.send(file=discord.File(pcomic))
         
         else:
@@ -173,7 +172,7 @@ async def shop(ctx, spec: str, content: str, *options):
                 
                 snum = str(num).zfill(ND)
                 name = f"Comics/{tag}{snum} - {com['name']}" + com["extension"]
-                pcomic = await create_png(name, resize=True)
+                pcomic = create_png(name, resize=True)
                 await ctx.send(file=discord.File(pcomic))
 
     update_members(people)

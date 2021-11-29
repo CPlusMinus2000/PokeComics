@@ -4,18 +4,17 @@ import discord
 import random
 import json
 import math
-from discord.ext import commands, tasks
-from dotenv import load_dotenv
+import modules.config as config
+from discord.ext import commands
 from datetime import datetime, date, timedelta
 from glob import glob
 
-from modules.config import NUM_DIGITS as ND, default_member, COLOURS, SADPIP_ID
-from modules.config import TOKEN, GUILD, PURCHASE_FIELDS, SLOTS_PRICE
+from modules.config import NUM_DIGITS as ND, BOUNDS, bounds
 from pokeapi import Pokemon, special_cases
 from dexload import MAX_POKEMON
 
 from modules.database import *
-from modules.misc import bounds, insensitive_glob, leading_num, not_everyone
+from modules.misc import insensitive_glob, leading_num, not_everyone
 from modules.comic import *
 from modules.silly import *
 from modules.dialogue import dialogue
@@ -36,7 +35,7 @@ DAILY_WAIT = timedelta(hours = 23)
 # Some setup printouts, plus extra info in case I need to scrape something
 @bot.event
 async def on_ready():
-    guild = discord.utils.get(bot.guilds, name=GUILD)
+    guild = discord.utils.get(bot.guilds, name=config.GUILD)
     print(
         f'{bot.user} is connected to the following guild:\n'
         f'{guild.name}(id: {guild.id})\n'
@@ -49,7 +48,7 @@ async def on_ready():
         members = get_members()
         for g in bot.guilds:
             for m in g.members:
-                members[str(m.id)] = default_member(m)
+                members[str(m.id)] = config.default_member(m)
         
         update_members(members)
     
@@ -62,7 +61,7 @@ async def on_message(message):
         return
     
     if message.author.id not in people:
-        people[message.author.id] = default_member(message.author)
+        people[message.author.id] = config.default_member(message.author)
         update_members(people)
     
     cont = message.content.lower()
@@ -162,7 +161,9 @@ async def comic(ctx, content: str):
             elif people[ctx.author.id]["name"] in readers:
                 if stime <= present <= etime and update != date.today():
                     db_update(cnum)
-                    await ctx.send(dialogue["comic_wake"])
+                    if BOUNDS:
+                        await ctx.send(dialogue["comic_wake"])
+
                     await send_comic(ctx, cnum)
                 
                 elif stime <= present <= etime:
@@ -190,7 +191,9 @@ async def comic(ctx, content: str):
             stime <= present <= etime and update != date.today()):
         
                 db_update(lv + 1)
-                await ctx.send(dialogue["comic_wake"])
+                if BOUNDS:
+                    await ctx.send(dialogue["comic_wake"])
+
                 await send_comic(ctx, lv + 1)
         
         else:
@@ -218,9 +221,11 @@ async def latest(ctx):
 
     if (people[ctx.author.id]["name"] in readers and lv < lat and
         stime <= datetime.now().time() <= etime and update != date.today()):
-            
+
         db_update(lv + 1)
-        await ctx.send(dialogue["comic_wake"])
+        if BOUNDS:
+            await ctx.send(dialogue["comic_wake"])
+
         await send_comic(ctx, lv + 1)
 
     else:
@@ -278,20 +283,24 @@ async def search(ctx, *keywords):
     comics = [c for c in result if valid_comic(c, lview) != -1]
 
     if not comics: # No comics found
-        await ctx.send(dialogue["search_fail"] % f"<:sadpip:{SADPIP_ID}>")
+        await ctx.send(dialogue["search_fail"] % config.SADPIP_STR)
     elif len(comics) == 1:
         await send_comic(ctx, comics[0])
     else: # TODO: Make this display the list, and ask for a selection
         await send_comic(ctx, comics[0])
 
 
-TIME_CONVERT = 3
 @bot.command(name="rules", help=dialogue["rules_help"])
 async def rules(ctx):
-    wkt, wet = bounds(0)[1], bounds(5)[1]
-    wkform = f"{wkt.hour - TIME_CONVERT}:{wkt.minute}"
-    weform =  f"{wet.hour - TIME_CONVERT}:{wet.minute}"
-    await ctx.send(dialogue["rules_msg"] % (wkform, weform))
+
+    if BOUNDS:
+        wkt, wet = bounds(0)[1], bounds(5)[1]
+        wkform = f"{wkt.hour - config.TIMEZONE}:{wkt.minute}"
+        weform =  f"{wet.hour - config.TIMEZONE}:{wet.minute}"
+        await ctx.send(dialogue["rules_msg"] % (wkform, weform))
+    
+    else:
+        await ctx.send(dialogue["no_rules_msg"])
 
 
 @bot.command(name="okedex", help=dialogue["dex_help"])
@@ -322,11 +331,11 @@ async def pic(ctx, *args):
     entry = discord.Embed(
         title=title, url=url, 
         description=info.get_genus(), 
-        color=COLOURS[info.colour]
+        color=config.COLOURS[info.colour]
     )
 
     # Crap tons of info embedding
-    guild = discord.utils.get(bot.guilds, name=GUILD)
+    guild = discord.utils.get(bot.guilds, name=config.GUILD)
     typemojis = [
         f"{discord.utils.get(guild.emojis, name=t)} {t.capitalize()}"
         for t in info.get_types()
@@ -397,18 +406,18 @@ async def urchased(ctx, *specs):
         specs = ("facts",) + specs[1:]
     
     if not specs:
-        topics = PURCHASE_FIELDS
-    elif len(specs) == 1 and specs[0] in PURCHASE_FIELDS:
-        topics[specs[0]] = PURCHASE_FIELDS[specs[0]]
+        topics = config.PURCHASE_FIELDS
+    elif len(specs) == 1 and specs[0] in config.PURCHASE_FIELDS:
+        topics[specs[0]] = config.PURCHASE_FIELDS[specs[0]]
     else:
         topics[specs[0]] = specs[1:]
     
     await purchased(ctx, topics)
 
 
-@bot.command(name="slots", help=dialogue["slots_help"] % SLOTS_PRICE)
+@bot.command(name="slots", help=dialogue["slots_help"] % config.SLOTS_PRICE)
 async def slots(ctx, slots: int = 3):
-    guild = discord.utils.get(bot.guilds, name=GUILD)
+    guild = discord.utils.get(bot.guilds, name=config.GUILD)
     await play_slots(ctx, guild.emojis, slots)
 
 # A few joke commands
@@ -451,7 +460,7 @@ async def oll(ctx, *info):
         answers = ["Yes", "No"]
     
     title = f"Poll: {' '.join(qwords)}"
-    poll = discord.Embed(title=title, color=COLOURS["black"])
+    poll = discord.Embed(title=title, color=config.COLOURS["black"])
     for i, answer in enumerate(answers):
         poll.add_field(
             name=chr(i + ord('A')), value=f"```{answer}```", inline=False
@@ -484,7 +493,9 @@ async def points(ctx, amt: float, *args):
 @bot.command(name='join', help='Tells me to join the voice channel.')
 async def join(ctx):
     if not ctx.message.author.voice:
-        await ctx.send(f"You're not connected to a voice channel <:sadpip:{SADPIP_ID}>")
+        await ctx.send(
+            f"You're not connected to a voice channel {config.SADPIP_STR}"
+        )
         return
     else:
         channel = ctx.message.author.voice.channel
@@ -549,4 +560,4 @@ async def ython(ctx, *args):
     await bot_eval(ctx, *args)
 
 if __name__ == "__main__":
-    bot.run(TOKEN)
+    bot.run(config.TOKEN)
