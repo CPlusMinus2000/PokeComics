@@ -19,6 +19,9 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD = os.getenv("DISCORD_GUILD")
 
+# Discord message character limit, with some extra padding room
+DISCORD_CHAR_LIMIT = 2000 - 6
+
 # NUM_DIGITS is a really important constant -- it governs how much padding
 # the program looks for in comic numbers. The fact that my comics
 # are numbered with a zfill of 3 is accounted for by NUM_DIGITS, and
@@ -102,7 +105,7 @@ SLOT_INFO = {
 }
 
 SLOT_FAIL = "FAIL"
-SLOTS_PRICE = 2
+SLOTS_PRICE = 5
 
 
 def default_member(mem: discord.Member) -> Member:
@@ -158,7 +161,7 @@ def create_png(
     convert = CONVERT % (tif, new) if not resize else CONVERTR % (tif, new)
     if not os.path.exists(new) or getmtime(tif) > getmtime(new):
         print(f"Converting {tif} to {new}")
-        sp.run(convert.split()) 
-        sp.run(f"chmod a+rx {new}".split())
+        sp.run(convert, shell=True) 
+        sp.run(f"chmod a+rx '{new}'", shell=True)
     
     return new

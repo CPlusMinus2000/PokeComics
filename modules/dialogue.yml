@@ -107,7 +107,7 @@ shop_help: |
        All RotomPhone comics cost 100 Pokédollars, except for Main comics, which are free.
     
     All of these materials can be accessed using $pshop <topic> <spec>, where "topic" is one 
-    of the 8 subcategories listed above, and "spec" is additional specification information. For example:
+    of the 9 subcategories listed above, and "spec" is additional specification information. For example:
      - `$pshop battle 1` purchases the first Battle comic.
      - `$pshop lore 3` gets you the third lore fact.
     You can also use one-letter abbreviations, like 'b' for battle, 'd' for details, etc.
@@ -122,6 +122,7 @@ shop_help: |
 
 shop_price: All %ss are %d Pokédollars. All sales final.
 shop_price_all: All %ss are %d Pokédollars, all %ss are %d Pokédollars. All sales final.
+shop_looking: Not what you're looking for? Try $pshop %s <number> to do some shopping :)
 spec_fail: "I don't recognize the topic '%s'. Try $phelp shop?"
 spec_unrecognized: >
     Starting a purchase command with '%s' is invalid. Sorry! Those keywords

@@ -54,7 +54,15 @@ async def shop(ctx: discord.ext.commands.Context, *options) -> None:
     if userid not in people:
         raise ValueError("User not in database")
     elif opts and opts[0].lower() in ['h', "help"]:
-        await ctx.send(dialogue["shop_help"])
+        help_msg = dialogue["shop_help"]
+        chunks = [
+            help_msg[i:i + config.DISCORD_CHAR_LIMIT]
+            for i in range(0, len(help_msg), config.DISCORD_CHAR_LIMIT)
+        ]
+
+        for chunk in chunks:
+            await ctx.send("```" + chunk + "```")
+
         return
     elif opts and opts[0] not in ALL_OPTIONS:
         await ctx.send(dialogue["spec_fail"] % opts[0])
@@ -139,6 +147,10 @@ async def shop(ctx: discord.ext.commands.Context, *options) -> None:
                         value=dialogue["pv_zero"] % (topic, nfield, amt)
                     )
 
+        if len(fields) == 1 and len(next(iter(fields.values()))) == 1:
+            field = next(iter(fields.values()))
+            viewed.set_footer(text=dialogue["shop_looking"] % field)
+
         await ctx.send(embed=viewed)
 
     elif opts[0] in words:
@@ -146,15 +158,15 @@ async def shop(ctx: discord.ext.commands.Context, *options) -> None:
         balance = people[userid]["points"]
         if opts[1].isdigit():
             num = int(opts[1])
-            if num <= 0 or num > len(words[opts[1]]):
+            if num <= 0 or num > len(words[opts[0]]):
                 await ctx.send(
-                    dialogue["words_oob"] % (opts[1], len(words[opts[1]]))
+                    dialogue["words_oob"] % (num, len(words[opts[0]]))
                 )
 
                 return
 
-            if len(seen) < len(words[opts[1]]):
-                seen += [False] * (len(words[opts[1]]) - len(seen))
+            if len(seen) < len(words[opts[0]]):
+                seen += [False] * (len(words[opts[0]]) - len(seen))
 
             if not seen[num - 1]:
                 msg = charge(
@@ -167,7 +179,7 @@ async def shop(ctx: discord.ext.commands.Context, *options) -> None:
                 else:
                     seen[num - 1] = True
 
-            await ctx.send(words[opts[1]][num - 1])
+            await ctx.send(words[opts[0]][num - 1])
 
         elif "rand" in opts[1]:
             if len(opts) < 3:
@@ -183,7 +195,7 @@ async def shop(ctx: discord.ext.commands.Context, *options) -> None:
                     num = random.choice(unseen)
                     people[ctx.author.id]["points"] -= config.PRICES["facts"]
                     seen[num - 1] = True
-                    await ctx.send(words[opts[1]][num])
+                    await ctx.send(words[opts[0]][num])
 
             elif "old" in opts[2]:
                 haveseen = [n for n in range(len(seen)) if seen[n]]
@@ -191,7 +203,7 @@ async def shop(ctx: discord.ext.commands.Context, *options) -> None:
                     await ctx.send(dialogue["words_seen_none"])
                 else:
                     num = random.choice(haveseen)
-                    await ctx.send(words[opts[1]][num])
+                    await ctx.send(words[opts[0]][num])
 
             else:
                 await ctx.send(dialogue["words_no_options"])
