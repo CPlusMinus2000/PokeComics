@@ -59,6 +59,7 @@ RPHONE_TOPICS = {
 
 # Turns out these are quite useful, so let's make them constants
 RPHONE_TOPICS_PAID = {t for t in RPHONE_TOPICS if t != "main"}
+ALL_TOPICS_PAID = RPHONE_TOPICS_PAID | set(words.keys())
 RPHONE_HEADERS = {f"r{h}" for h in RPHONE_TOPICS.values()}
 PURCHASE_FIELDS = {
     "facts": sorted(words.keys()),
@@ -67,6 +68,14 @@ PURCHASE_FIELDS = {
         key=lambda t: "zzzzz" if t.lower() == "other" else t
     )
 }
+
+# Prices for shop stuff
+PRICES = { "facts": 50, "rphone": 100 }
+FIELD_NAMES = { "facts": "fact", "rphone": "RotomPhone comic"}
+
+# Shop abbreviations
+SHOP_ABBREVS = {t[0]: t for t in ALL_TOPICS_PAID}
+SHOP_ABBREVS['m'] = "main"
 
 # Colours
 COLOURS = {
@@ -140,7 +149,6 @@ def create_png(
 ) -> str:
     """
     Creates a png from a tif.
-    TODO: Look into os.chmod, and also not using asyncio.sleep
     """
 
     if tif.count(".tif") > 1:

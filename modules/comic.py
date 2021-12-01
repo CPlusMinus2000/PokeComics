@@ -67,7 +67,13 @@ def fetch_comic(cnum: int, coloured: bool = True) -> str:
     return "ERROR"
 
 
-async def send_comic(ctx, comic: Union[str, int], colour: bool = True):
+async def send_comic(
+    ctx: discord.ext.commands.Context,
+    comic: Union[str, int],
+    colour: bool = True,
+    autoembed: bool = True
+) -> None:
+
     """
     Sends a comic, and also checks for possible necessary preparations.
     """
@@ -80,7 +86,11 @@ async def send_comic(ctx, comic: Union[str, int], colour: bool = True):
 
     #TODO: Replace 4 with an actual not-hardcoded index
     fname = '/'.join(name.split('/')[4:]).replace(' ', "%20")
-    msg = await ctx.send(f"{SITE}{fname}")
+    to_send = f"{SITE}{fname}"
+    if not autoembed:
+        to_send = '<' + to_send + '>'
+    
+    msg = await ctx.send(to_send)
     await msg.add_reaction(LEFT)
     await msg.add_reaction(RIGHT)
     await msg.add_reaction(emoji=f":pip:{PIPLUP_ID}")

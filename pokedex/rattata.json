@@ -27,6 +27,9 @@
     ],
     "base_happiness": 70,
     "capture_rate": 255,
+    "characters": [
+        "Youngster Joey"
+    ],
     "color": {
         "name": "purple",
         "url": "https://pokeapi.co/api/v2/pokemon-color/7/"

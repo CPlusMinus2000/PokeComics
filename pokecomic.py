@@ -20,7 +20,7 @@ from modules.silly import *
 from modules.dialogue import dialogue
 from modules.emojis import emojis
 from modules.music import YTDLSource
-from modules.shop import shop, purchased, play_slots
+from modules.shop import shop, play_slots
 
 # Apparently Discord now requires bots to have priveleged intentions
 intents = discord.Intents.all()
@@ -179,7 +179,9 @@ async def comic(ctx, content: str):
             tiff = next(c for c in comics if c.endswith("tif"))
             await ctx.send(file=discord.File(tiff))
         elif len(comics) >= 1 and content.endswith('u'):
-            await send_comic(ctx, cnum, False)
+            await send_comic(ctx, cnum, colour=False)
+        elif len(comics) >= 1 and content.endswith('l'):
+            await send_comic(ctx, cnum, autoembed=False)
         elif len(comics) >= 1:
             await send_comic(ctx, cnum)
         else:
@@ -395,24 +397,8 @@ async def balance(ctx, user: discord.User = None):
 
 
 @bot.command(name="shop", help=dialogue["shop_help"])
-async def shopping(ctx, spec, content, *options):
-    await shop(ctx, spec, content, *options)
-
-
-@bot.command(name="urchased", help=dialogue["purchased_help"])
-async def urchased(ctx, *specs):
-    topics = {}
-    if specs and specs[0] == "fact":
-        specs = ("facts",) + specs[1:]
-    
-    if not specs:
-        topics = config.PURCHASE_FIELDS
-    elif len(specs) == 1 and specs[0] in config.PURCHASE_FIELDS:
-        topics[specs[0]] = config.PURCHASE_FIELDS[specs[0]]
-    else:
-        topics[specs[0]] = specs[1:]
-    
-    await purchased(ctx, topics)
+async def shopping(ctx, *options):
+    await shop(ctx, *options)
 
 
 @bot.command(name="slots", help=dialogue["slots_help"] % config.SLOTS_PRICE)

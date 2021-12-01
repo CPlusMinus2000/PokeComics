@@ -84,12 +84,48 @@ user_balance: "%s, %s has accrued %s Pokédollars."
 
 # Spending
 shop_help: | 
-    Opens the shop. Lots to buy! Some options:
-        $pshop facts <details|lore|references> <number|rand <old|new>>
-        $pshop rphone <main|battle|people|scitech|world|other> <number|title>
+    Hiya! Welcome to the shop, the place where all your dreams come to life.
+    Well, maybe not your wallet's dreams, but you didn't need those points anyway, right?
+    Here you can buy lots of things that will hopefully allow you to enjoy life more. Right now, we have:
+    
+     - Facts, which are little bits of information about the comics that may not be obvious,
+       or additional details about the world and its inhabitants. There are three subcategories:
+        * Details, which are, well, details about the comic contents,
+        * Lore, extra information that helps flesh out the story, and
+        * References, which point out the source material that comic portions are pulled from.
+       All facts cost 50 Pokédollars.
+     
+     - RotomPhone comics, which provide additional details about the mechanics and structure
+       of how the Pokémon world works, which will aid in understanding what's going on.
+       There are six subcategories here:
+        * Main comics show off the workings of the RotomPhone app.
+        * Battle comics are about the mechanics of Pokémon battles.
+        * People comics detail the lives and stories of famous in-world Pokémon.
+        * Scitech comics discuss the underlying science and technology of Pokémon.
+        * World comics go over the Pokémon world itself.
+        * Other is for the miscellaneous comics that don't fit elsewhere.
+       All RotomPhone comics cost 100 Pokédollars, except for Main comics, which are free.
+    
+    All of these materials can be accessed using $pshop <topic> <spec>, where "topic" is one 
+    of the 8 subcategories listed above, and "spec" is additional specification information. For example:
+     - `$pshop battle 1` purchases the first Battle comic.
+     - `$pshop lore 3` gets you the third lore fact.
+    You can also use one-letter abbreviations, like 'b' for battle, 'd' for details, etc.
+    
+    There are a few other useful ways to use the $pshop command:
+     - `$pshop` with no other keywords shows you your overall purchase history
+     - `$pshop [facts|rphone]` shows you your facts/rphone purchase history
+     - `$pshop [category]` shows your purchase history for a specific one of the 8 paid categories
+     - `$pshop help` and `$phelp shop` show this help message
+    
+    Please enjoy using the shop!
 
 shop_price: All %ss are %d Pokédollars. All sales final.
-spec_fail: "The topic '%s' doesn't exist. Try $phelp shop?"
+shop_price_all: All %ss are %d Pokédollars, all %ss are %d Pokédollars. All sales final.
+spec_fail: "I don't recognize the topic '%s'. Try $phelp shop?"
+spec_unrecognized: >
+    Starting a purchase command with '%s' is invalid. Sorry! Those keywords
+    can only be used for viewing purchase history.
 words_help: |
     Buys a fact using 100 of your hard-earned Pokédollars.
     You can choose between "lore", "references", and "details" for spec.
@@ -110,6 +146,7 @@ words_no_options: >
     the word "new" or "old" to the end of the command. If you select a new
     fact, you will be charged accordingly.
 words_seen_all: You've already seen all the facts in that category!
+words_seen_none: You haven't seen any of the facts in that category!
 words_unrecognized_content: >
     I don't recognize the content specifier. Please give either a number
     or the letters "rand" if you want a random fact.

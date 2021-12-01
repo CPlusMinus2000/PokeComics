@@ -27,6 +27,9 @@
     ],
     "base_happiness": 140,
     "capture_rate": 30,
+    "characters": [
+        "Nurse Joy"
+    ],
     "color": {
         "name": "pink",
         "url": "https://pokeapi.co/api/v2/pokemon-color/6/"
